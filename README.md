@@ -4,7 +4,7 @@
 - 🛣️ [Next.js](https://nextjs.org) as frameworks
 - ⚛️ [React 19](https://react.dev/)
 - 🎨 [TailwindCSS](https://tailwindcss.com/) with custom theme
-- 🎯 [javaScript](https://www.w3schools.com/Js/) for type safety
+- 🎯 [TypeScript](https://www.w3schools.com/Js/) for type safety
 
 ## 🚀 Getting Started
 
