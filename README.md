@@ -75,10 +75,3 @@ docs(readme): update deployment steps
 - `fix/*`: Bug fixes
 
 
-## 📦 Main Project Structure
-- [app/]       Berisi Controller, Model, Middleware, dan logika bisnis utama.
-- [config/]    File konfigurasi untuk aplikasi (database, session, dll.).
-- [database/]  Berisi migration, seeders, dan definisi database lainnya.
-- [resources/] Semua template EdgeJS (.edge) untuk frontend.
-- [start/]     Konfigurasi route (start/routes.ts), kernel, dan hooks.
-
