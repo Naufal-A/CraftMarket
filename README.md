@@ -19,7 +19,7 @@
 1. **Clone Repository**
 
    ```powershell
-   git clone https://github.com/Naufal-A/PROJECT-PPW-K3.git
+   git clone https://github.com/Naufal-A/CraftMarket.git
    cd PROJECT-PPW-K3
    ```
 
