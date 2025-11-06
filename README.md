@@ -20,7 +20,7 @@
 
    ```powershell
    git clone https://github.com/Naufal-A/CraftMarket.git
-   cd PROJECT-PPW-K3
+   cd CraftMarket
    ```
 
 2. **Setup Node.js**
