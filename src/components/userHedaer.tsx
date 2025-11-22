@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 const NAV_ITEMS = [
   { label: 'Home', path: '/' },
   { label: 'About', path: '#about' },
-  { label: 'Products', path: '/products' },
+  { label: 'Products', path: '/items' },
   { label: 'Services', path: '/services' },
   { label: 'Contact Us', path: '/contact' },
 ];
