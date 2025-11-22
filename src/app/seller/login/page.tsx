@@ -9,32 +9,32 @@ export default function SellerLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      alert("Email dan password wajib diisi!");
-      return;
-    }
+  // const handleLogin = async () => {
+  //   if (!email || !password) {
+  //     alert("Email dan password wajib diisi!");
+  //     return;
+  //   }
 
-    try {
-      const res = await fetch("/api/seller/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  //   try {
+  //     const res = await fetch("/api/seller/login", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, password }),
+  //     });
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.message || "Login gagal!");
-        return;
-      }
+  //     if (!res.ok) {
+  //       alert(data.message || "Login gagal!");
+  //       return;
+  //     }
 
-      router.push("/seller/dashboard");
+  //     router.push("/seller/dashboard");
 
-    } catch (err) {
-      alert("Terjadi kesalahan server.");
-    }
-  };
+  //   } catch (err) {
+  //     alert("Terjadi kesalahan server.");
+  //   }
+  // };
 
   return (
     <div className="flex h-screen">
@@ -76,7 +76,8 @@ export default function SellerLogin() {
         />
 
         <button
-          onClick={handleLogin}
+          // onClick={handleLogin}
+          onClick={()=> router.push("/seller/dasboard")}
           className="bg-[#B89C8A] text-white w-full py-3 rounded-md hover:bg-[#A88B78] transition text-lg"
         >
           MASUK
