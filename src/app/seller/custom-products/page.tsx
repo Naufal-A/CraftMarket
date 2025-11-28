@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Upload, X } from "lucide-react";
+import Image from "next/image";
+import { Plus, Upload, X } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 
@@ -29,7 +30,7 @@ interface CustomProduct {
 }
 
 export default function CustomProductPage() {
-  const [products, setProducts] = useState<CustomProduct[]>([]);
+  const [products] = useState<CustomProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -333,11 +334,11 @@ export default function CustomProductPage() {
                       </label>
                       <input
                         type="number"
-                        value={formData.price}
+                        value={formData.basePrice}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            price: parseFloat(e.target.value),
+                            basePrice: parseFloat(e.target.value),
                           })
                         }
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
@@ -627,9 +628,11 @@ export default function CustomProductPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {uploadedImages.map((image, idx) => (
                         <div key={idx} className="relative group">
-                          <img
+                          <Image
                             src={image}
                             alt={`Model ${idx}`}
+                            width={200}
+                            height={128}
                             className="w-full h-32 object-cover rounded-lg"
                           />
                           <button
