@@ -1,4 +1,50 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Login gagal");
+        return;
+      }
+
+      // Store token in localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to home
+      router.push("/home");
+    } catch (err) {
+      setError("Terjadi kesalahan saat login");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen">
       
@@ -33,24 +79,38 @@ export default function LoginPage() {
           atau masuk dengan email
         </p>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3
-          focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition"
-        />
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3
+            focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition"
+          />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-4
-          focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition"
-        />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-4
+            focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition"
+          />
 
-        <button className="bg-[#B89C8A] text-white w-full py-2.5 rounded-lg 
-        hover:bg-[#A88B78] transition text-center text-base font-medium shadow-sm">
-          MASUK
-        </button>
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+          <button 
+            type="submit"
+            disabled={loading}
+            className="bg-[#B89C8A] text-white w-full py-2.5 rounded-lg 
+            hover:bg-[#A88B78] transition text-center text-base font-medium shadow-sm disabled:opacity-50"
+          >
+            {loading ? "Sedang masuk..." : "MASUK"}
+          </button>
+        </form>
       </div>
 
       <div className="w-1/2 bg-[#CAB1A3] flex flex-col items-center justify-center px-20 text-white">

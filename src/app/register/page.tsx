@@ -1,9 +1,50 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password, confirmPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Pendaftaran gagal");
+        return;
+      }
+
+      // Store user data and redirect to home
+      localStorage.setItem("user", JSON.stringify(data.user));
+      if (response.ok) {
+        router.push("/home");
+      }
+    } catch (err) {
+      setError("Terjadi kesalahan saat pendaftaran");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -11,7 +52,7 @@ export default function RegisterPage() {
       <div className="w-1/2 bg-[#CAB1A3] flex flex-col items-center justify-center px-20 text-white">
         <h2 className="text-4xl font-bold mb-3">Selamat Datang</h2>
         <p className="text-center text-base opacity-90">
-          Silakan login untuk melanjutkan.
+          Silakan daftar untuk mulai menjelajah.
         </p>
 
         <button
@@ -53,27 +94,53 @@ export default function RegisterPage() {
           atau daftar dengan email
         </p>
 
-        <input
-          type="text"
-          placeholder="Name"
-          className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition"
-        />
+        <form onSubmit={handleRegister}>
+          <input
+            type="text"
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+          />
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition"
-        />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+          />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-4 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition"
-        />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+          />
 
-        <button className="bg-[#B89C8A] text-white w-full py-2.5 rounded-lg hover:bg-[#A88B78] transition text-center text-base font-medium shadow-sm">
-          DAFTAR
-        </button>
+          <input
+            type="password"
+            placeholder="Konfirmasi Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-4 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+          />
+
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+          <button 
+            type="submit"
+            disabled={loading}
+            className="bg-[#B89C8A] text-white w-full py-2.5 rounded-lg hover:bg-[#A88B78] transition text-center text-base font-medium shadow-sm disabled:opacity-50"
+          >
+            {loading ? "Sedang mendaftar..." : "DAFTAR"}
+          </button>
+        </form>
       </div>
     </div>
   );
