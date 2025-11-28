@@ -1,0 +1,999 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Plus, Trash2, Edit2, LayoutDashboard, ShoppingCart, PackageSearch, Wallet, Settings } from "lucide-react";
+
+interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  stock: number;
+  rating: number;
+  reviews: number;
+}
+
+interface CustomProduct {
+  _id?: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  category: string;
+  materials: string[];
+  dimensions: {
+    length: number;
+    width: number;
+    height: number;
+    unit: string;
+  };
+  customizationOptions: {
+    material: string[];
+    color: string[];
+    design: string[];
+  };
+  modelImages: string[];
+  image: string;
+  deliveryTime: string;
+  warranty: string;
+}
+
+export default function ProductsPage() {
+  const [active, setActive] = useState("products");
+  const router = useRouter();
+  const [productType, setProductType] = useState<"regular" | "custom">("regular");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  // Regular Product Form
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "Furniture",
+    stock: "",
+    image: "",
+  });
+
+  // Custom Product Form
+  const [customFormData, setCustomFormData] = useState<CustomProduct>({
+    name: "",
+    description: "",
+    basePrice: 0,
+    category: "Furniture",
+    materials: [],
+    dimensions: { length: 0, width: 0, height: 0, unit: "cm" },
+    customizationOptions: {
+      material: [],
+      color: [],
+      design: [],
+    },
+    modelImages: [],
+    deliveryTime: "",
+    warranty: "",
+    image: "",
+  });
+
+  // Handler to add customization options
+  const addCustomizationOption = (type: "material" | "color" | "design", value: string) => {
+    if (value.trim()) {
+      setCustomFormData({
+        ...customFormData,
+        customizationOptions: {
+          ...customFormData.customizationOptions,
+          [type]: [...customFormData.customizationOptions[type], value],
+        },
+      });
+      setCustomOptions({
+        ...customOptions,
+        [`new${type.charAt(0).toUpperCase() + type.slice(1)}`]: "",
+      });
+    }
+  };
+
+  // Handler to remove customization option
+  const removeCustomizationOption = (type: "material" | "color" | "design", index: number) => {
+    setCustomFormData({
+      ...customFormData,
+      customizationOptions: {
+        ...customFormData.customizationOptions,
+        [type]: customFormData.customizationOptions[type].filter((_, i) => i !== index),
+      },
+    });
+  };
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [customOptions, setCustomOptions] = useState<{
+    materials: string[];
+    colors: string[];
+    designs: string[];
+    newMaterial: string;
+    newColor: string;
+    newDesign: string;
+  }>({
+    materials: [],
+    colors: [],
+    designs: [],
+    newMaterial: "",
+    newColor: "",
+    newDesign: "",
+  });
+
+  // Fetch products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("/api/products");
+        const data = await res.json();
+        const productsList = Array.isArray(data) ? data : data.products || [];
+        setProducts(productsList);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const readers: Promise<string>[] = [];
+      for (let i = 0; i < files.length; i++) {
+        readers.push(
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              resolve(event.target?.result as string);
+            };
+            reader.readAsDataURL(files[i]);
+          })
+        );
+      }
+
+      Promise.all(readers).then((images) => {
+        setCustomFormData({
+          ...customFormData,
+          modelImages: [...customFormData.modelImages, ...images],
+        });
+      });
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const newImages = customFormData.modelImages.filter((_, i) => i !== index);
+    setCustomFormData({
+      ...customFormData,
+      modelImages: newImages,
+    });
+  };
+
+  const handleSubmitRegular = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!formData.name || !formData.description || !formData.price || !formData.stock) {
+      setError("Semua field wajib diisi!");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const user = localStorage.getItem("user");
+      const userData = user ? JSON.parse(user) : null;
+
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          sellerId: userData?._id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Gagal menambah produk!");
+        return;
+      }
+
+      setProducts([...products, data.product]);
+      setSuccess("Produk berhasil ditambahkan!");
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+        category: "Furniture",
+        stock: "",
+        image: "",
+      });
+      setShowForm(false);
+
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      console.error("Error:", err);
+      setError("Terjadi kesalahan server!");
+    }
+  };
+
+  const handleSubmitCustom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!customFormData.name || !customFormData.description || customFormData.basePrice === 0) {
+      setError("Isi semua field wajib!");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const user = localStorage.getItem("user");
+      const userData = user ? JSON.parse(user) : null;
+
+      const payload = {
+        ...customFormData,
+        sellerId: userData?._id,
+      };
+
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to save product");
+
+      setSuccess("Produk custom dibuat!");
+      setShowForm(false);
+      setCustomFormData({
+        name: "",
+        description: "",
+        basePrice: 0,
+        category: "Custom",
+        materials: [],
+        dimensions: { length: 0, width: 0, height: 0, unit: "cm" },
+        customizationOptions: { material: [], color: [], design: [] },
+        modelImages: [],
+        image: "",
+        deliveryTime: "",
+        warranty: "",
+      });
+
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      console.error("Error:", err);
+      setError("Gagal menyimpan produk custom");
+    }
+  };
+
+  const handleDelete = async (productId: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus produk ini?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        setError("Gagal menghapus produk!");
+        return;
+      }
+
+      setProducts(products.filter((p) => p._id !== productId));
+      setSuccess("Produk berhasil dihapus!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      console.error("Error:", err);
+      setError("Terjadi kesalahan saat menghapus produk!");
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-[#F4EFEA]">
+      {/* Sidebar Navigation */}
+      <aside className="w-72 bg-[#DCC8B9] h-full p-8 flex flex-col shadow-md fixed">
+        <div className="text-xl font-bold text-[#4A3B32] mb-8 tracking-wide">
+          Marketplace Dashboard
+        </div>
+
+        <div className="flex flex-col gap-3 text-[#4A3B32] font-medium">
+          {[
+            { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+            { key: "orders", label: "Orders", icon: <ShoppingCart size={18} /> },
+            { key: "products", label: "Products", icon: <PackageSearch size={18} /> },
+            { key: "wallet", label: "Wallet", icon: <Wallet size={18} /> },
+            { key: "settings", label: "Settings", icon: <Settings size={18} /> },
+          ].map((item) => (
+            <button
+              key={item.key}
+              onClick={() => {
+                setActive(item.key);
+                if (item.key === "dashboard") {
+                  router.push("/seller/dasboard");
+                } else if (item.key === "products") {
+                  router.push("/seller/products");
+                }
+              }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                active === item.key
+                  ? "bg-white shadow-sm text-[#3B2E27]"
+                  : "hover:bg-white/40"
+              }`}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-8 overflow-y-auto ml-72">
+        <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-semibold text-[#4A3B32] mb-4">
+            Product Management
+          </h1>
+          
+          {/* Tabs */}
+          <div className="flex gap-4 border-b border-gray-300">
+            <button
+              onClick={() => setProductType("regular")}
+              className={`px-6 py-3 font-medium transition border-b-2 ${
+                productType === "regular"
+                  ? "border-[#8C735A] text-[#8C735A]"
+                  : "border-transparent text-gray-600 hover:text-gray-800"
+              }`}
+            >
+              Regular Products
+            </button>
+            <button
+              onClick={() => setProductType("custom")}
+              className={`px-6 py-3 font-medium transition border-b-2 ${
+                productType === "custom"
+                  ? "border-[#8C735A] text-[#8C735A]"
+                  : "border-transparent text-gray-600 hover:text-gray-800"
+              }`}
+            >
+              Custom Products
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="text-3xl font-semibold text-[#4A3B32]">
+              {products.length}
+            </div>
+            <div className="text-sm text-red-500 font-medium">Total Product</div>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="text-3xl font-semibold text-[#4A3B32]">
+              {products.filter((p) => p.stock > 0).length}
+            </div>
+            <div className="text-sm text-green-500 font-medium">Active</div>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="text-3xl font-semibold text-[#4A3B32]">
+              {products.filter((p) => p.stock > 0 && p.stock < 5).length}
+            </div>
+            <div className="text-sm text-yellow-500 font-medium">Low Stock</div>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="text-3xl font-semibold text-[#4A3B32]">
+              {products.filter((p) => p.stock === 0).length}
+            </div>
+            <div className="text-sm text-red-500 font-medium">Out Of Stock</div>
+          </div>
+        </div>
+
+        {/* Add Product Button */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-4 flex-1">
+            <input
+              type="text"
+              placeholder="Search Orders, Curtomers"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+            />
+            <select className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] text-gray-700">
+              <option>All Statuses</option>
+            </select>
+          </div>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-2 bg-[#B89C8A] hover:bg-[#A88B78] text-white px-6 py-3 rounded-lg font-medium transition ml-4"
+          >
+            <Plus size={20} />
+            Add Product
+          </button>
+        </div>
+
+        {/* Messages */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4">
+            {success}
+          </div>
+        )}
+
+        {/* Add Product Form */}
+        {showForm && (
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
+            <h2 className="text-2xl font-semibold text-[#4A3B32] mb-6">
+              Tambah Produk Baru
+            </h2>
+
+            {/* Regular Product Form */}
+            {productType === "regular" && (
+              <form onSubmit={handleSubmitRegular} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nama Produk *
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Masukkan nama produk"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kategori *
+                    </label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3]"
+                    >
+                      <option>Furniture</option>
+                      <option>Crafts</option>
+                      <option>Accessories</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Deskripsi *
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan deskripsi produk"
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gambar Produk *
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setFormData({ ...formData, image: event.target?.result as string });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3]"
+                      required={!formData.image}
+                    />
+                    {formData.image && (
+                      <Image
+                        src={formData.image}
+                        alt="Preview"
+                        width={80}
+                        height={80}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Harga (Rp) *
+                    </label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="Masukkan harga"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Stok *
+                    </label>
+                    <input
+                      type="number"
+                      name="stock"
+                      value={formData.stock}
+                      onChange={handleInputChange}
+                      placeholder="Masukkan jumlah stok"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#B89C8A] hover:bg-[#A88B78] text-white px-6 py-3 rounded-lg font-medium transition"
+                  >
+                    Tambah Produk
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium transition"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Custom Product Form */}
+            {productType === "custom" && (
+              <form onSubmit={handleSubmitCustom} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nama Produk Custom *
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={customFormData.name}
+                      onChange={(e) => setCustomFormData({ ...customFormData, name: e.target.value })}
+                      placeholder="Masukkan nama produk custom"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kategori *
+                    </label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3]"
+                    >
+                      <option>Furniture</option>
+                      <option>Crafts</option>
+                      <option>Accessories</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Deskripsi Produk *
+                  </label>
+                  <textarea
+                    name="description"
+                    value={customFormData.description}
+                    onChange={(e) => setCustomFormData({ ...customFormData, description: e.target.value })}
+                    placeholder="Masukkan deskripsi produk custom"
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Harga Dasar (Rp) *
+                    </label>
+                    <input
+                      type="number"
+                      name="basePrice"
+                      value={customFormData.basePrice}
+                      onChange={(e) => setCustomFormData({ ...customFormData, basePrice: parseFloat(e.target.value) })}
+                      placeholder="Masukkan harga dasar"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Waktu Pengerjaan (hari) *
+                    </label>
+                    <input
+                      type="number"
+                      name="deliveryTime"
+                      value={customFormData.deliveryTime}
+                      onChange={(e) => setCustomFormData({ ...customFormData, deliveryTime: e.target.value })}
+                      placeholder="Masukkan waktu pengerjaan"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Customization Options */}
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-semibold text-[#4A3B32] mb-4">Opsi Kustomisasi Produk</h3>
+                  
+                  {/* Materials */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Material Pilihan
+                    </label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={customOptions.newMaterial}
+                        onChange={(e) => setCustomOptions({ ...customOptions, newMaterial: e.target.value })}
+                        placeholder="Contoh: Kayu Jati, Rotan, Besi, dst"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomizationOption("material", customOptions.newMaterial);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addCustomizationOption("material", customOptions.newMaterial)}
+                        className="px-4 py-2 bg-[#B89C8A] hover:bg-[#A88B78] text-white rounded-lg font-medium transition"
+                      >
+                        Tambah
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {customFormData.customizationOptions.material.map((material, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-[#C4B5A5] text-[#4A3B32] px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2"
+                        >
+                          {material}
+                          <button
+                            type="button"
+                            onClick={() => removeCustomizationOption("material", idx)}
+                            className="text-red-600 hover:text-red-800 font-bold"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Colors */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Pilihan Warna
+                    </label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={customOptions.newColor}
+                        onChange={(e) => setCustomOptions({ ...customOptions, newColor: e.target.value })}
+                        placeholder="Contoh: Coklat, Hitam, Putih, Krem, dst"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomizationOption("color", customOptions.newColor);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addCustomizationOption("color", customOptions.newColor)}
+                        className="px-4 py-2 bg-[#B89C8A] hover:bg-[#A88B78] text-white rounded-lg font-medium transition"
+                      >
+                        Tambah
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {customFormData.customizationOptions.color.map((color, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-[#C4B5A5] text-[#4A3B32] px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2"
+                        >
+                          {color}
+                          <button
+                            type="button"
+                            onClick={() => removeCustomizationOption("color", idx)}
+                            className="text-red-600 hover:text-red-800 font-bold"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Designs */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Pilihan Desain
+                    </label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={customOptions.newDesign}
+                        onChange={(e) => setCustomOptions({ ...customOptions, newDesign: e.target.value })}
+                        placeholder="Contoh: Modern, Klasik, Minimalis, Vintage, dst"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomizationOption("design", customOptions.newDesign);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addCustomizationOption("design", customOptions.newDesign)}
+                        className="px-4 py-2 bg-[#B89C8A] hover:bg-[#A88B78] text-white rounded-lg font-medium transition"
+                      >
+                        Tambah
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {customFormData.customizationOptions.design.map((design, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-[#C4B5A5] text-[#4A3B32] px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2"
+                        >
+                          {design}
+                          <button
+                            type="button"
+                            onClick={() => removeCustomizationOption("design", idx)}
+                            className="text-red-600 hover:text-red-800 font-bold"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gambar Utama Produk *
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setCustomFormData({ ...customFormData, image: event.target?.result as string });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3]"
+                      required={!customFormData.image}
+                    />
+                    {customFormData.image && (
+                      <Image
+                        src={customFormData.image}
+                        alt="Preview"
+                        width={80}
+                        height={80}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Model/Foto Produk *
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3]"
+                  />
+                  <div className="mt-3 grid grid-cols-3 gap-3">
+                    {customFormData.modelImages.map((img, idx) => (
+                      <div key={idx} className="relative group">
+                        <Image src={img} alt={`Model ${idx + 1}`} width={96} height={96} className="w-full h-24 object-cover rounded-lg" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#B89C8A] hover:bg-[#A88B78] text-white px-6 py-3 rounded-lg font-medium transition"
+                  >
+                    Tambah Produk Custom
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium transition"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Products Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Product
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Category
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Price
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Stock
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Rating
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      Belum ada produk. Tambahkan produk baru untuk memulai!
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product) => (
+                    <tr
+                      key={product._id}
+                      className="border-b border-gray-200 hover:bg-gray-50 transition"
+                    >
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {product.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {product.description.substring(0, 50)}...
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {product.category}
+                      </td>
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        Rp{product.price.toLocaleString("id-ID")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            product.stock > 0
+                              ? product.stock < 5
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {product.stock} item
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        ⭐ {product.rating} ({product.reviews} reviews)
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button className="p-2 hover:bg-blue-100 rounded-lg transition">
+                            <Edit2 size={18} className="text-blue-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product._id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition"
+                          >
+                            <Trash2 size={18} className="text-red-600" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+      </main>
+    </div>
+  );
+}

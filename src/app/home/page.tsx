@@ -1,8 +1,51 @@
 "use client";
 
 import { Star, Image as ImageIcon } from "lucide-react";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
 const BuyerHomePage = () => {
+  const searchParams = useSearchParams();
+  const [user, setUser] = useState<User | null>(null);
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      try {
+        const cart = JSON.parse(savedCart);
+        setCartCount(Array.isArray(cart) ? cart.length : 0);
+      } catch (err) {
+        console.error("Error parsing cart:", err);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const section = searchParams.get("section");
+    if (section) {
+      const element = document.getElementById(section);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    }
+  }, [searchParams]);
   const testimonials = [
     {
       name: "Nom e-Owner",
@@ -27,7 +70,9 @@ const BuyerHomePage = () => {
   ];
 
   return (
-    <main className="w-full bg-white pt-0">
+    <>
+      <Header cartCount={cartCount} />
+      <main className="w-full bg-white pt-0">
       {/* === HERO SECTION === */}
       <section id="home" className="flex flex-col items-center pt-10 pb-20 px-6 scroll-mt-20">
         <h1 className="text-5xl md:text-6xl font-serif text-[#8C735A] mb-6">
@@ -43,6 +88,20 @@ const BuyerHomePage = () => {
           <ImageIcon className="w-24 h-24 text-gray-400" />
         </div>
       </section>
+
+      {/* === WELCOME MESSAGE === */}
+      {user && (
+        <section className="w-full bg-[#F5F5F5] py-10 px-6">
+          <div className="max-w-6xl mx-auto text-center">
+            <h2 className="text-3xl font-semibold text-[#8C735A] mb-2">
+              Selamat Datang, {user.name}!
+            </h2>
+            <p className="text-gray-600">
+              Jelajahi koleksi produk kerajinan terbaik dari pengrajin lokal.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* === ABOUT US SECTION === */}
       <section id="about" className="w-full bg-gray-50 py-20 px-6 scroll-mt-20">
@@ -67,7 +126,7 @@ const BuyerHomePage = () => {
             </p>
 
             {/* Button */}
-            <button className="bg-[#C4B5A5] hover:bg-[#B3A290] text-white text-sm font-semibold py-3 px-8 rounded-md transition-all">
+            <button className="bg-[#C4B5A5] hover:bg-[#B3A290] text-white text-sm font-semibold py-3 px-8 rounded-md transition-all" onClick={() => window.location.href = '/products'}>
               SEE PRODUCTS
             </button>
           </div>
@@ -120,6 +179,60 @@ const BuyerHomePage = () => {
             </div>
 
             {/* Service 3 */}
+            <div className="bg-gray-50 p-8 rounded-xl text-center">
+              <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-white font-bold text-xl">✏️</span>
+              </div>
+              <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
+                Custom Design
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Desain custom kami akan ditampilkan di sini
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* === CUSTOM SECTION === */}
+      <section id="custom" className="w-full py-20 px-6 scroll-mt-20">
+        <div className="max-w-6xl mx-auto">
+          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+            Custom
+          </span>
+          <h2 className="text-4xl md:text-5xl font-serif text-[#8C735A] mb-16 mt-2">
+            Custom Solutions
+          </h2>
+
+          {/* Custom Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Custom 1 */}
+            <div className="bg-gray-50 p-8 rounded-xl text-center">
+              <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-white font-bold text-xl">🛋️</span>
+              </div>
+              <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
+                Custom Furniture
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Layanan furnitur custom kami akan ditampilkan di sini
+              </p>
+            </div>
+
+            {/* Custom 2 */}
+            <div className="bg-gray-50 p-8 rounded-xl text-center">
+              <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-white font-bold text-xl">💬</span>
+              </div>
+              <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
+                Free Consultation
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Konsultasi gratis kami akan ditampilkan di sini
+              </p>
+            </div>
+
+            {/* Custom 3 */}
             <div className="bg-gray-50 p-8 rounded-xl text-center">
               <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
                 <span className="text-white font-bold text-xl">✏️</span>
@@ -213,7 +326,7 @@ const BuyerHomePage = () => {
                   <input
                     type="text"
                     placeholder="John Doe"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition placeholder-gray-600"
                   />
                 </div>
 
@@ -224,7 +337,7 @@ const BuyerHomePage = () => {
                   <input
                     type="tel"
                     placeholder="+62 123 456 789"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition placeholder-gray-600"
                   />
                 </div>
 
@@ -235,7 +348,7 @@ const BuyerHomePage = () => {
                   <input
                     type="email"
                     placeholder="john@example.com"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition placeholder-gray-600"
                   />
                 </div>
 
@@ -271,7 +384,7 @@ const BuyerHomePage = () => {
                   <textarea
                     rows={5}
                     placeholder="Tell us more about your project..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#C4B5A5] focus:ring-1 focus:ring-[#C4B5A5] outline-none transition resize-none placeholder-gray-600"
                   ></textarea>
                 </div>
 
@@ -286,7 +399,9 @@ const BuyerHomePage = () => {
           </div>
         </div>
       </section>
-    </main>
+      </main>
+      <Footer />
+    </>
   );
 };
 

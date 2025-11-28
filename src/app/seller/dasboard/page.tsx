@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -12,6 +13,7 @@ import {
 
 export default function SellerDashboard() {
   const [active, setActive] = useState("dashboard");
+  const router = useRouter();
 
   return (
     <div className="flex h-screen bg-[#F4EFEA]">
@@ -31,7 +33,12 @@ export default function SellerDashboard() {
           ].map((item) => (
             <button
               key={item.key}
-              onClick={() => setActive(item.key)}
+              onClick={() => {
+                setActive(item.key);
+                if (item.key === "products") {
+                  router.push("/seller/products");
+                }
+              }}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                 active === item.key
                   ? "bg-white shadow-sm text-[#3B2E27]"
