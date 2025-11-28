@@ -283,6 +283,86 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-[#4A3B32] mb-8">Ratings and Reviews</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Rating Summary */}
+            <div className="bg-white rounded-xl p-8 shadow-lg">
+              <div className="text-center mb-8">
+                <div className="text-5xl font-bold text-[#4A3B32] mb-2">
+                  {product.rating.toFixed(1)}
+                </div>
+                <div className="flex justify-center gap-1 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-2xl">
+                      {i < Math.floor(product.rating) ? '⭐' : '☆'}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-gray-600">({product.reviews} Reviews)</p>
+              </div>
+
+              {/* Rating Breakdown */}
+              <div className="space-y-4">
+                {[5, 4, 3, 2, 1].map((rating) => {
+                  const count = Math.floor(Math.random() * 20); // Dummy count for now
+                  const percentage = count > 0 ? (count / 60) * 100 : 0;
+                  return (
+                    <div key={rating} className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-6">★ {rating}</span>
+                      <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-yellow-400"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-600 w-8 text-right">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button className="w-full mt-8 bg-[#8C735A] text-white py-3 rounded-lg font-semibold hover:bg-[#7A6248] transition">
+                Write a review
+              </button>
+            </div>
+
+            {/* Reviews List */}
+            <div className="md:col-span-2 space-y-6">
+              {/* Sample Reviews */}
+              {[1, 2, 3].map((idx) => (
+                <div key={idx} className="bg-white rounded-xl p-6 shadow-lg">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 bg-[#8C735A] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      U
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-semibold text-gray-900">User detail</p>
+                        <p className="text-sm text-gray-500">Nov {15 + idx}, 2024</p>
+                      </div>
+                      <div className="flex gap-1 mb-3">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} className="text-lg">⭐</span>
+                        ))}
+                      </div>
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button className="w-full border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                See More
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Footer />

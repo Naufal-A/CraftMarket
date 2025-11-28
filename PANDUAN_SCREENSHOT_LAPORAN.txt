@@ -1,0 +1,201 @@
+📸 PANDUAN SCREENSHOT UNTUK LAPORAN - CRAFTMARKET DATABASE
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 FILE YANG SUDAH SIAP DI-SCREENSHOT:
+
+1. SCREENSHOT_CODE_4.1_USER_MODEL.ts
+   → Untuk Gambar 4.1 (User Model)
+   
+2. SCREENSHOT_CODE_4.2_PRODUCT_MODEL.ts
+   → Untuk Gambar 4.2 (Product Model)
+   
+3. SCREENSHOT_CODE_4.3_ORDER_MODEL.ts
+   → Untuk Gambar 4.3 (Order Model)
+   
+4. SCREENSHOT_CODE_5_MONGODB_CONNECTION.ts
+   → Untuk Gambar 5.1 (Koneksi Database)
+   
+5. SCREENSHOT_CODE_6_CART_API.ts
+   → Untuk Gambar 6.1 (API Route - Cart)
+   
+6. SCREENSHOT_CODE_6.2_ORDER_API.ts
+   → Untuk Gambar 6.2 (API Route - Order)
+
+═══════════════════════════════════════════════════════════════════════
+
+📌 CARA SCREENSHOT YANG BENAR:
+
+1. Buka file SCREENSHOT_CODE_4.1_USER_MODEL.ts di VS Code
+2. Pilih kode yang ingin di-SS (mulai dari "const UserSchema" sampai "export default")
+3. Settings VS Code untuk hasil rapi:
+   ✔ Font size: 13-14 (supaya besar & jelas)
+   ✔ Use Light Theme (lebih mudah di-print)
+   ✔ Tutup file lain yang tidak penting
+   ✔ Full zoom: Ctrl + 0 (reset zoom standar)
+
+4. Screenshot dengan: Win + Shift + S
+5. Crop hanya bagian kode penting (bukan seluruh VS Code)
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 TIPS SCREENSHOT PROFESIONAL:
+
+✅ DO:
+   - Screenshot hanya 15-25 baris kode saja (jangan terlalu panjang)
+   - Gunakan kode yang sudah di-highlight (pilih dengan mouse)
+   - Tambahkan border/frame jika perlu di-edit (bisa pakai Paint 3D)
+   - Crop rapi, background putih/hitam konsisten
+   - Resize gambar 600-800px lebar untuk laporan
+
+❌ DON'T:
+   - Jangan screenshot seluruh VS Code (terlalu banyak toolbar)
+   - Jangan mix light & dark theme dalam laporan (pilih 1)
+   - Jangan screenshot 50+ baris kode (susah dibaca)
+   - Jangan ada console errors di layar saat SS
+
+═══════════════════════════════════════════════════════════════════════
+
+📝 FORMAT PENULISAN DI LAPORAN (Copy-Paste Template):
+
+---
+
+4. DESAIN & STRUKTUR DATABASE
+
+4.1 Model User
+
+Berikut adalah struktur User Model yang digunakan untuk menyimpan data pengguna:
+
+[SCREENSHOT GAMBAR 4.1 DI SINI]
+
+Gambar 4.1 - Struktur User Model (User.ts)
+
+Penjelasan:
+Model User menyimpan informasi pengguna dengan field:
+- name: Nama pengguna (required)
+- email: Email unik pengguna dengan validasi (required, unique)
+- password: Password ter-hash menggunakan bcryptjs (required, minlength 6 chars)
+- role: Tipe pengguna (buyer/seller)
+- shopName: Nama toko (opsional, hanya untuk seller)
+
+Fitur keamanan:
+- Password otomatis di-hash sebelum disimpan (pre-save hook)
+- Email di-normalisasi menjadi lowercase
+- Timestamps (createdAt, updatedAt) otomatis
+
+---
+
+4.2 Model Product
+
+[SCREENSHOT GAMBAR 4.2 DI SINI]
+
+Gambar 4.2 - Struktur Product Model (Product.ts)
+
+Penjelasan:
+Model Product menyimpan data produk dengan field:
+- name: Nama produk
+- description: Deskripsi produk
+- price: Harga produk (min 0)
+- category: Kategori produk
+- stock: Stok ketersediaan (min 0)
+- rating: Rating produk (0-5)
+- reviews: Jumlah review
+- sellerId: ID penjual dengan index untuk query cepat
+- images: Array URL gambar produk
+
+---
+
+4.3 Model Order
+
+[SCREENSHOT GAMBAR 4.3 DI SINI]
+
+Gambar 4.3 - Struktur Order Model (Order.ts)
+
+Penjelasan:
+Model Order menyimpan data pesanan pembelian:
+- orderId: ID pesanan unik (format: ORD-{timestamp}-{random})
+- buyerId, sellerId: Identifikasi pembeli & penjual (indexed)
+- items: Array item pesanan dengan detail produk
+- totalPrice: Total harga pesanan
+- status: Status pesanan (pending/processing/shipped/delivered/cancelled)
+- shippingAddress: Alamat pengiriman lengkap
+- paymentMethod: Metode pembayaran yang digunakan
+- trackingNumber, notes: Informasi pengiriman tambahan
+
+---
+
+5. IMPLEMENTASI KONEKSI DATABASE
+
+[SCREENSHOT GAMBAR 5.1 DI SINI]
+
+Gambar 5.1 - Kode Koneksi MongoDB dengan Mongoose
+
+Penjelasan:
+Sistem koneksi database menggunakan pattern caching untuk:
+- Menghindari multiple connection pools (efisien)
+- Reuse koneksi yang sudah ada
+- Graceful error handling dengan console logs
+- Support environment variable (MONGODB_URI)
+
+URL default: mongodb://localhost:27017/craftmarket
+
+---
+
+6. IMPLEMENTASI BACKEND API
+
+6.1 Cart API Route
+
+[SCREENSHOT GAMBAR 6.1 DI SINI]
+
+Gambar 6.1 - Cart API Route (GET & POST)
+
+Penjelasan:
+Cart API mendukung operasi:
+- GET: Mengambil cart pengguna, auto-create jika belum ada
+- POST: Menambah item ke cart, auto-increment quantity jika produk sudah ada
+
+Request body untuk POST:
+{
+  "buyerId": "user123",
+  "productId": "prod456",
+  "productName": "Wooden Craft",
+  "price": 50000,
+  "quantity": 1,
+  "image": "url-image.jpg"
+}
+
+---
+
+6.2 Order API Route
+
+[SCREENSHOT GAMBAR 6.2 DI SINI]
+
+Gambar 6.2 - Order API Route (GET & POST)
+
+Penjelasan:
+Order API mendukung operasi:
+- GET: Query order berdasarkan buyerId, sellerId, atau orderId
+- POST: Membuat order baru dengan auto-generate orderId
+
+Order status workflow: pending → processing → shipped → delivered (atau cancelled)
+
+Request body untuk POST:
+{
+  "buyerId": "user123",
+  "buyerName": "John Doe",
+  "buyerEmail": "john@email.com",
+  "sellerId": "seller456",
+  "items": [...],
+  "totalPrice": 150000,
+  "shippingAddress": {...},
+  "paymentMethod": "Bank Transfer"
+}
+
+---
+
+═══════════════════════════════════════════════════════════════════════
+
+✨ SELESAI! Tinggal screenshot 6 file dan paste ke laporan Word.
+
+Mau saya buatkan versi final laporan Word + template placeholder gambar?
+Cukup reply: "Buatkan laporan Word-nya" 👍
