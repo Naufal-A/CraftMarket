@@ -72,7 +72,15 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     }
 
     setCart(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    try {
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded. Clearing old data...");
+        localStorage.clear();
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
+      }
+    }
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 2000);
   };

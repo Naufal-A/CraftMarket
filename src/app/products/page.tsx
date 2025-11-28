@@ -55,9 +55,20 @@ const ProductsPage = () => {
     }
   }, []);
 
-  // Save cart to localStorage
+  // Save cart to localStorage with error handling
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
+    try {
+      if (cart.length > 0 || typeof window !== "undefined") {
+        localStorage.setItem("cart", JSON.stringify(cart));
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded. Clearing old data...");
+        localStorage.clear();
+      } else {
+        console.error("Error saving cart:", error);
+      }
+    }
   }, [cart]);
 
   const handleAddToCart = (product: Product) => {

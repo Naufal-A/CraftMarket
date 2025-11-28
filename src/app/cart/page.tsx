@@ -47,13 +47,29 @@ export default function CartPage() {
       item._id === productId ? { ...item, quantity: newQuantity } : item
     );
     setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    try {
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded. Clearing old data...");
+        localStorage.clear();
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
+      }
+    }
   };
 
   const handleRemoveItem = (productId: string) => {
     const updatedCart = cartItems.filter((item) => item._id !== productId);
     setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    try {
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded. Clearing old data...");
+        localStorage.clear();
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
+      }
+    }
   };
 
   const subtotal = cartItems.reduce(
