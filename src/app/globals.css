@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Remove default shadows and borders that may cause lines */
+header {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+main {
+  border-top: none !important;
+}
+
+section {
+  border: none !important;
+}
+

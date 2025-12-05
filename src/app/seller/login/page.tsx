@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function SellerLogin() {
@@ -80,7 +81,7 @@ export default function SellerLogin() {
           ))}
         </div>
 
-        <p className="text-sm text-gray-600 mb-6 text-center">
+        <p className="text-sm text-gray-800 mb-6 text-center">
           atau gunakan akun email Anda
         </p>
 
@@ -91,7 +92,7 @@ export default function SellerLogin() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="border border-gray-300 focus:border-[#B89C8A] focus:ring-1 focus:ring-[#B89C8A] rounded-md px-4 py-3 w-full mb-4 placeholder-gray-600"
+            className="border border-gray-400 focus:border-[#B89C8A] focus:ring-1 focus:ring-[#B89C8A] rounded-md px-4 py-3 w-full mb-4 placeholder-gray-800 text-gray-900 bg-white"
           />
 
           <input
@@ -100,7 +101,7 @@ export default function SellerLogin() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="border border-gray-300 focus:border-[#B89C8A] focus:ring-1 focus:ring-[#B89C8A] rounded-md px-4 py-3 w-full mb-4 placeholder-gray-600"
+            className="border border-gray-400 focus:border-[#B89C8A] focus:ring-1 focus:ring-[#B89C8A] rounded-md px-4 py-3 w-full mb-4 placeholder-gray-800 text-gray-900 bg-white"
           />
 
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
@@ -113,6 +114,18 @@ export default function SellerLogin() {
             {loading ? "Sedang masuk..." : "MASUK"}
           </button>
         </form>
+
+        <div className="mt-6 pt-6 border-t border-gray-300 text-center">
+          <p className="text-gray-800 text-sm mb-3">
+            Belum punya akun seller?
+          </p>
+          <Link
+            href="/seller/register"
+            className="inline-block bg-[#B89C8A] text-white px-6 py-2 rounded-md font-medium hover:bg-[#A88B78] transition"
+          >
+            Silahkan Registrasi
+          </Link>
+        </div>
       </div>
 
       <div className="w-1/2 bg-[#CAB1A3] flex flex-col items-center justify-center px-20 text-white">
@@ -122,10 +135,10 @@ export default function SellerLogin() {
         </p>
 
         <button
-          onClick={() => router.push("/seller/register")}
-          className="mt-6 px-6 py-2 border border-white rounded-lg hover:bg-white hover:text-[#CAB1A3] transition"
+          onClick={() => router.push("/login")}
+          className="mt-6 px-6 py-2 border border-white rounded-lg hover:bg-white hover:text-[#CAB1A3] transition font-medium"
         >
-          Belum punya akun? Daftar
+          Ingin berbelanja sebagai pembeli?
         </button>
       </div>
 

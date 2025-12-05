@@ -45,9 +45,9 @@ export async function POST(req: Request) {
       await mongoose.connect(MONGODB_URI);
     }
 
-    const { buyerId, productId, productName, price, quantity, image } = await req.json();
+    const { buyerId, productId, productName, price, quantity, image, sellerId } = await req.json();
 
-    if (!buyerId || !productId || !productName || !price || !quantity) {
+    if (!buyerId || !productId || !productName || !price || quantity === undefined) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -69,8 +69,8 @@ export async function POST(req: Request) {
     );
 
     if (existingItem) {
-      // Update quantity
-      existingItem.quantity += quantity;
+      // Add to existing quantity (accumulate)
+      existingItem.quantity = (existingItem.quantity as number) + quantity;
     } else {
       // Add new item
       cart.items.push({
@@ -79,6 +79,7 @@ export async function POST(req: Request) {
         price,
         quantity,
         image,
+        sellerId,
       });
     }
 
@@ -163,15 +164,18 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url);
     const buyerId = searchParams.get("buyerId");
     const productId = searchParams.get("productId");
+    const clearAll = searchParams.get("clearAll");
 
-    if (!buyerId || !productId) {
+    console.log(`DELETE request: buyerId=${buyerId}, productId=${productId}, clearAll=${clearAll}`);
+
+    if (!buyerId) {
       return NextResponse.json(
-        { error: "Buyer ID and Product ID are required" },
+        { error: "Buyer ID is required" },
         { status: 400 }
       );
     }
 
-    const cart = await Cart.findOne({ buyerId });
+    let cart = await Cart.findOne({ buyerId });
 
     if (!cart) {
       return NextResponse.json(
@@ -180,18 +184,41 @@ export async function DELETE(req: Request) {
       );
     }
 
-    cart.items = cart.items.filter((item: Record<string, unknown>) => item.productId !== productId);
+    console.log(`Cart found with ${cart.items.length} items`);
 
-    await cart.save();
+    if (clearAll === "true") {
+      // Clear all items from cart
+      console.log(`Clearing all items from cart for buyer ${buyerId}`);
+      cart.items = [];
+    } else if (productId) {
+      // Filter items - remove items where productId matches (both string comparison)
+      const initialLength = cart.items.length;
+      const itemsBeforeFilter = cart.items.map((item: Record<string, unknown>) => item.productId);
+      console.log(`Items before filter: ${JSON.stringify(itemsBeforeFilter)}`);
+      
+      cart.items = cart.items.filter((item: Record<string, unknown>) => 
+        String(item.productId) !== String(productId)
+      );
+
+      console.log(`Items removed: ${initialLength - cart.items.length} out of ${initialLength}`);
+
+      // Check if item was actually removed
+      if (cart.items.length === initialLength) {
+        console.warn(`Product ${productId} not found in cart for buyer ${buyerId}`);
+      }
+    }
+
+    const savedCart = await cart.save();
+    console.log(`Cart saved with ${savedCart.items.length} items`);
 
     return NextResponse.json(
-      { message: "Item removed from cart", cart },
+      { message: "Cart updated", cart: savedCart },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error deleting from cart:", error);
+    console.error("Error updating cart:", error);
     return NextResponse.json(
-      { error: "Failed to delete from cart" },
+      { error: "Failed to update cart", details: String(error) },
       { status: 500 }
     );
   }

@@ -5,36 +5,70 @@ import { Trash2, Plus, Minus } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Link from "next/link";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface CartItem {
-  _id: string;
+  _id?: string;
+  productId?: string;
   name: string;
   price: number;
-  stock: number;
+  stock?: number;
   quantity: number;
+  productName?: string;
 }
 
-export default function CartPage() {
+function CartPageContent() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Load cart from localStorage
+  // Load cart from database or localStorage
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("cart");
-      if (savedCart) {
-        setCartItems(JSON.parse(savedCart));
+    const loadCart = async () => {
+      try {
+        // Get user ID from localStorage (set during login)
+        const storedUserId = localStorage.getItem("userId");
+        setUserId(storedUserId);
+
+        if (storedUserId) {
+          // Load from database
+          const response = await fetch(`/api/cart?buyerId=${storedUserId}`);
+          if (response.ok) {
+            const cart = await response.json();
+            // Map items to include _id field for consistency
+            const mappedItems = (cart.items || []).map((item: Record<string, unknown>) => ({
+              ...item,
+              _id: (item._id as string) || (item.productId as string),
+              name: (item.name as string) || (item.productName as string),
+            }));
+            setCartItems(mappedItems as CartItem[]);
+            // Also update localStorage with mapped items
+            localStorage.setItem("cart", JSON.stringify(mappedItems));
+          }
+        } else {
+          // Fallback to localStorage
+          const savedCart = localStorage.getItem("cart");
+          if (savedCart) {
+            setCartItems(JSON.parse(savedCart));
+          }
+        }
+      } catch (err) {
+        console.error("Error loading cart:", err);
+        // Fallback to localStorage
+        const savedCart = localStorage.getItem("cart");
+        if (savedCart) {
+          setCartItems(JSON.parse(savedCart));
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error parsing cart:", err);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    loadCart();
   }, []);
 
   const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      handleRemoveItem(productId);
+    if (newQuantity < 0) {
       return;
     }
 
@@ -43,17 +77,132 @@ export default function CartPage() {
       return;
     }
 
+    // If quantity is 0, remove the item
+    if (newQuantity === 0) {
+      handleRemoveItem(productId);
+      return;
+    }
+
+    // Update local state immediately
     const updatedCart = cartItems.map((item) =>
       item._id === productId ? { ...item, quantity: newQuantity } : item
     );
     setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+
+    // Save to localStorage as backup
+    try {
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded");
+        localStorage.clear();
+      }
+    }
+
+    // Dispatch custom event to sync other components
+    window.dispatchEvent(
+      new CustomEvent("cartUpdated", { detail: updatedCart })
+    );
+
+    // Save to database if user is logged in
+    if (userId) {
+      fetch("/api/cart", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerId: userId,
+          productId,
+          quantity: newQuantity,
+        }),
+      }).catch((err) => console.error("Error updating cart in database:", err));
+    }
   };
 
-  const handleRemoveItem = (productId: string) => {
-    const updatedCart = cartItems.filter((item) => item._id !== productId);
+  const handleRemoveItem = (itemId: string) => {
+    // Find the item to get its productId
+    const itemToDelete = cartItems.find((item) => (item._id || item.productId) === itemId);
+    
+    const updatedCart = cartItems.filter((item) => {
+      const id = item._id || item.productId;
+      return id !== itemId;
+    });
     setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+
+    // Save to localStorage as backup
+    try {
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded");
+        localStorage.clear();
+      }
+    }
+
+    // Dispatch custom event to sync other components
+    window.dispatchEvent(
+      new CustomEvent("cartUpdated", { detail: updatedCart })
+    );
+
+    // Remove from database if user is logged in
+    if (userId && itemToDelete) {
+      // Get the actual productId from database (not _id)
+      const dbProductId = itemToDelete.productId || itemToDelete._id;
+      console.log(`Deleting from DB: buyerId=${userId}, productId=${dbProductId}`);
+      
+      fetch(`/api/cart?buyerId=${userId}&productId=${dbProductId}`, {
+        method: "DELETE",
+      })
+        .then((res) => {
+          console.log(`Delete response status: ${res.status}`);
+          if (!res.ok) {
+            console.error("Failed to delete from database:", res.statusText);
+            throw new Error(`Delete failed: ${res.statusText}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Item deleted from database:", data);
+        })
+        .catch((err) => {
+          console.error("Error removing from cart in database:", err);
+        });
+    }
+  };
+
+  const handleClearAllCart = async () => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus semua item dari keranjang?")) {
+      return;
+    }
+
+    setCartItems([]);
+
+    // Save to localStorage as backup
+    try {
+      localStorage.setItem("cart", JSON.stringify([]));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded");
+        localStorage.clear();
+      }
+    }
+
+    // Dispatch custom event to sync other components
+    window.dispatchEvent(
+      new CustomEvent("cartUpdated", { detail: [] })
+    );
+
+    // Clear all from database if user is logged in
+    if (userId) {
+      fetch(`/api/cart?buyerId=${userId}&clearAll=true`, {
+        method: "DELETE",
+      })
+        .then((res) => {
+          if (!res.ok) {
+            console.error("Failed to clear cart from database:", res.statusText);
+          }
+        })
+        .catch((err) => console.error("Error clearing cart from database:", err));
+    }
   };
 
   const subtotal = cartItems.reduce(
@@ -110,16 +259,24 @@ export default function CartPage() {
               {/* Cart Items */}
               <div className="lg:col-span-2">
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-gray-200">
+                  <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-gray-800">
                       Produk ({cartItems.length})
                     </h2>
+                    <button
+                      onClick={handleClearAllCart}
+                      className="text-sm text-red-600 hover:text-red-700 hover:underline transition font-medium"
+                    >
+                      Hapus Semua
+                    </button>
                   </div>
 
                   <div className="divide-y divide-gray-200">
-                    {cartItems.map((item) => (
+                    {cartItems.map((item) => {
+                      const itemId = item._id || item.productId || "";
+                      return (
                       <div
-                        key={item._id}
+                        key={itemId}
                         className="p-6 flex gap-6 hover:bg-gray-50 transition"
                       >
                         {/* Product Image Placeholder */}
@@ -130,9 +287,9 @@ export default function CartPage() {
                         {/* Product Details */}
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-800 mb-1">
-                            {item.name}
+                            {item.name || item.productName}
                           </h3>
-                          <p className="text-sm text-gray-600 mb-3">
+                          <p className="text-sm text-gray-800 mb-3">
                             Rp{item.price.toLocaleString("id-ID")} per item
                           </p>
 
@@ -140,30 +297,30 @@ export default function CartPage() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() =>
-                                handleUpdateQuantity(item._id, item.quantity - 1)
+                                handleUpdateQuantity(itemId, Math.max(0, item.quantity - 1))
                               }
                               className="p-1 hover:bg-gray-200 rounded transition"
                             >
-                              <Minus size={18} className="text-gray-600" />
+                              <Minus size={18} className="text-gray-800" />
                             </button>
                             <input
                               type="number"
                               value={item.quantity}
                               onChange={(e) =>
-                                handleUpdateQuantity(item._id, parseInt(e.target.value))
+                                handleUpdateQuantity(itemId, parseInt(e.target.value) || 0)
                               }
-                              min="1"
-                              max={item.stock}
-                              className="w-12 text-center border border-gray-300 rounded py-1"
+                              min="0"
+                              max={item.stock || 999}
+                              className="w-12 text-center border border-gray-300 rounded py-1 text-gray-900"
                             />
                             <button
                               onClick={() =>
-                                handleUpdateQuantity(item._id, item.quantity + 1)
+                                handleUpdateQuantity(itemId, item.quantity + 1)
                               }
-                              disabled={item.quantity >= item.stock}
+                              disabled={item.quantity >= (item.stock || 999)}
                               className="p-1 hover:bg-gray-200 rounded transition disabled:opacity-50"
                             >
-                              <Plus size={18} className="text-gray-600" />
+                              <Plus size={18} className="text-gray-800" />
                             </button>
                           </div>
                         </div>
@@ -175,14 +332,15 @@ export default function CartPage() {
                             {(item.price * item.quantity).toLocaleString("id-ID")}
                           </p>
                           <button
-                            onClick={() => handleRemoveItem(item._id)}
+                            onClick={() => handleRemoveItem(itemId)}
                             className="text-red-600 hover:text-red-700 transition"
                           >
                             <Trash2 size={20} />
                           </button>
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 </div>
               </div>
@@ -216,9 +374,12 @@ export default function CartPage() {
                     </span>
                   </div>
 
-                  <button className="w-full bg-[#8C735A] text-white py-3 rounded-lg font-bold hover:bg-[#7A6248] transition mb-3">
+                  <Link
+                    href="/checkout"
+                    className="block w-full bg-[#8C735A] text-white py-3 rounded-lg font-bold hover:bg-[#7A6248] transition mb-3 text-center"
+                  >
                     Lanjut ke Pembayaran
-                  </button>
+                  </Link>
 
                   <Link
                     href="/products"
@@ -234,5 +395,13 @@ export default function CartPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function CartPage() {
+  return (
+    <ProtectedRoute requiredRole="buyer">
+      <CartPageContent />
+    </ProtectedRoute>
   );
 }

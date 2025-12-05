@@ -6,12 +6,12 @@ import ProductDetail from '@/models/ProductDetail';
 // GET single product by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
 
     const product = await Product.findById(id);
     if (!product) {
@@ -44,12 +44,12 @@ export async function GET(
 // PUT update product
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
     const { name, description, price, category, images, stock } = await request.json();
 
     const product = await Product.findByIdAndUpdate(
@@ -82,15 +82,77 @@ export async function PUT(
   }
 }
 
-// DELETE product
-export async function DELETE(
+// PATCH - Decrease or increase product stock
+export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
+    const { decreaseQuantity, increaseQuantity } = await request.json();
+
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return NextResponse.json(
+        { message: 'Produk tidak ditemukan' },
+        { status: 404 }
+      );
+    }
+
+    // Handle quantity decrease
+    if (decreaseQuantity) {
+      if (product.stock < decreaseQuantity) {
+        return NextResponse.json(
+          { message: 'Stok tidak mencukupi' },
+          { status: 400 }
+        );
+      }
+      product.stock -= decreaseQuantity;
+      console.log(
+        `Product ${id} stock decreased by ${decreaseQuantity}, remaining: ${product.stock}`
+      );
+    }
+
+    // Handle quantity increase
+    if (increaseQuantity) {
+      product.stock += increaseQuantity;
+      console.log(
+        `Product ${id} stock increased by ${increaseQuantity}, remaining: ${product.stock}`
+      );
+    }
+
+    await product.save();
+
+    return NextResponse.json(
+      {
+        message: 'Stock produk berhasil diperbarui',
+        product,
+      },
+      { status: 200 }
+    );
+  } catch (error: unknown) {
+    console.error('Update product stock error:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Terjadi kesalahan saat memperbarui stock produk';
+    return NextResponse.json(
+      { message: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE product
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await dbConnect();
+
+    const { id } = await params;
 
     const product = await Product.findByIdAndDelete(id);
     if (!product) {

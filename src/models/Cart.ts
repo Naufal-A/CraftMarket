@@ -6,6 +6,7 @@ export interface ICartItem {
   price: number;
   quantity: number;
   image?: string;
+  sellerId?: string;
 }
 
 export interface ICart extends Document {
@@ -35,6 +36,9 @@ const CartItemSchema = new Schema({
     min: 1,
   },
   image: {
+    type: String,
+  },
+  sellerId: {
     type: String,
   },
 });

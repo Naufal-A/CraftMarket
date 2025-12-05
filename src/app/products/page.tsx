@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShoppingCart, Heart } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface Product {
   _id: string;
@@ -23,12 +24,13 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-const ProductsPage = () => {
+const ProductsPageContent = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showCartNotification, setShowCartNotification] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Fetch products from API
   useEffect(() => {
@@ -47,36 +49,103 @@ const ProductsPage = () => {
     fetchProducts();
   }, []);
 
-  // Load cart from localStorage
+  // Load cart from database or localStorage (refresh every time component mounts)
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
+    const loadCart = async () => {
+      try {
+        const storedUserId = localStorage.getItem("userId");
+        setUserId(storedUserId);
+
+        if (storedUserId) {
+          // Load from database
+          const response = await fetch(`/api/cart?buyerId=${storedUserId}`);
+          if (response.ok) {
+            const cartData = await response.json();
+            setCart(cartData.items || []);
+          }
+        } else {
+          // Fallback to localStorage
+          const savedCart = localStorage.getItem("cart");
+          if (savedCart) {
+            setCart(JSON.parse(savedCart));
+          }
+        }
+      } catch (err) {
+        console.error("Error loading cart:", err);
+        const savedCart = localStorage.getItem("cart");
+        if (savedCart) {
+          setCart(JSON.parse(savedCart));
+        }
+      }
+    };
+    loadCart();
+    
+    // Also set up interval to refresh cart every 5 seconds
+    const interval = setInterval(loadCart, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Save cart to localStorage
+  // Save cart to localStorage with error handling
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
+    try {
+      if (cart.length > 0 || typeof window !== "undefined") {
+        localStorage.setItem("cart", JSON.stringify(cart));
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "QuotaExceededError") {
+        console.warn("Storage quota exceeded. Clearing old data...");
+        localStorage.clear();
+      } else {
+        console.error("Error saving cart:", error);
+      }
+    }
   }, [cart]);
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = async (product: Product) => {
     if (product.stock === 0) return;
 
     const existingItem = cart.find((item) => item._id === product._id);
+    let newQuantity = 1;
 
     if (existingItem) {
       if (existingItem.quantity < product.stock) {
-        setCart(
-          cart.map((item) =>
-            item._id === product._id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
-        );
+        newQuantity = existingItem.quantity + 1;
+      } else {
+        return;
       }
+    }
+
+    // Update local state
+    if (existingItem) {
+      setCart(
+        cart.map((item) =>
+          item._id === product._id
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
+      );
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
+    }
+
+    // Save to database if user is logged in
+    if (userId) {
+      try {
+        await fetch("/api/cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            buyerId: userId,
+            productId: product._id,
+            productName: product.name,
+            price: product.price,
+            quantity: newQuantity,
+            image: product.images?.[0],
+          }),
+        });
+      } catch (err) {
+        console.error("Error saving to database:", err);
+      }
     }
 
     setShowCartNotification(true);
@@ -88,7 +157,7 @@ const ProductsPage = () => {
       ? products
       : products.filter((p) => p.category === selectedCategory);
 
-  const categories = ["All", "Furniture", "Crafts", "Custom", "Accessories"];
+  const categories = ["All", "Furniture", "Crafts", "Accessories"];
   const cartTotal = cart.length;
 
   return (
@@ -138,7 +207,7 @@ const ProductsPage = () => {
           <div className="max-w-6xl mx-auto">
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-gray-600 text-lg">Loading produk...</p>
+                <p className="text-gray-800 text-lg">Loading produk...</p>
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
@@ -185,7 +254,7 @@ const ProductsPage = () => {
                         </h3>
 
                         {/* Description */}
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        <p className="text-sm text-gray-800 mb-3 line-clamp-2">
                           {product.description}
                       </p>
 
@@ -261,4 +330,10 @@ const ProductsPage = () => {
   );
 };
 
-export default ProductsPage;
+export default function ProductsPage() {
+  return (
+    <ProtectedRoute requiredRole="buyer">
+      <ProductsPageContent />
+    </ProtectedRoute>
+  );
+}

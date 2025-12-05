@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Storage</title>
+</head>
+<body>
+    <h1>Clearing Local Storage...</h1>
+    <p id="status">Processing...</p>
+    
+    <script>
+        try {
+            const cartData = localStorage.getItem("cart");
+            console.log("Current cart:", cartData);
+            
+            localStorage.clear();
+            console.log("Local storage cleared!");
+            
+            document.getElementById("status").innerHTML = 
+                "✓ Local Storage cleared successfully!<br><br>" +
+                "Redirecting to products page in 2 seconds...";
+            
+            setTimeout(() => {
+                window.location.href = "http://localhost:3000/products";
+            }, 2000);
+        } catch (error) {
+            console.error("Error clearing storage:", error);
+            document.getElementById("status").innerHTML = 
+                "✗ Error: " + error.message;
+        }
+    </script>
+</body>
+</html>

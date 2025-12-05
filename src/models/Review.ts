@@ -1,12 +1,13 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IReview extends Document {
-  _id: string;
   productId: string;
   buyerId: string;
   buyerName: string;
+  orderId: string;
   rating: number;
   comment: string;
+  verified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,10 +22,16 @@ const ReviewSchema = new Schema<IReview>(
     buyerId: {
       type: String,
       required: [true, "Buyer ID is required"],
+      index: true,
     },
     buyerName: {
       type: String,
       required: [true, "Buyer name is required"],
+    },
+    orderId: {
+      type: String,
+      required: [true, "Order ID is required"],
+      index: true,
     },
     rating: {
       type: Number,
@@ -37,6 +44,10 @@ const ReviewSchema = new Schema<IReview>(
       required: [true, "Comment is required"],
       minlength: [10, "Comment must be at least 10 characters"],
       maxlength: [500, "Comment cannot exceed 500 characters"],
+    },
+    verified: {
+      type: Boolean,
+      default: true,
     },
   },
   {
