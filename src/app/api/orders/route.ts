@@ -1,52 +1,58 @@
-import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import { NextRequest, NextResponse } from "next/server";
+import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/craftmarket";
-
-// Generate unique order ID
-function generateOrderId() {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 10000);
-  return `ORD-${timestamp}-${random}`;
-}
-
 // GET - Get orders (by buyer, seller, or all)
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    console.log("[Orders API GET] Request started");
+    
+    await dbConnect();
+    console.log("[Orders API GET] Database connected");
 
     const { searchParams } = new URL(req.url);
     const buyerId = searchParams.get("buyerId");
     const sellerId = searchParams.get("sellerId");
     const orderId = searchParams.get("orderId");
+    const status = searchParams.get("status");
 
-    const query: Record<string, string> = {};
+    const query: Record<string, unknown> = {};
 
     if (buyerId) query.buyerId = buyerId;
     if (sellerId) query.sellerId = sellerId;
     if (orderId) query.orderId = orderId;
+    if (status) query.status = status;
+
+    console.log("[Orders API GET] Query parameters:", { buyerId, sellerId, orderId, status });
+    console.log("[Orders API GET] MongoDB query:", query);
 
     const orders = await Order.find(query).sort({ createdAt: -1 });
 
-    return NextResponse.json(orders);
+    console.log(`[Orders API GET] Found ${orders.length} orders`);
+    if (orders.length > 0) {
+      console.log("[Orders API GET] First order:", JSON.stringify(orders[0], null, 2));
+    }
+
+    return NextResponse.json({
+      message: "Orders retrieved successfully",
+      count: orders.length,
+      orders,
+    });
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    console.error("[Orders API GET] Error fetching orders:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Error fetching orders";
     return NextResponse.json(
-      { error: "Failed to fetch orders" },
+      { message: errorMessage, error: String(error) },
       { status: 500 }
     );
   }
 }
 
 // POST - Create new order
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const {
       buyerId,
@@ -78,7 +84,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const orderId = generateOrderId();
+    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
     const order = new Order({
       orderId,
@@ -110,11 +116,9 @@ export async function POST(req: Request) {
 }
 
 // PUT - Update order status
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const { orderId, status, trackingNumber, notes } = await req.json();
 
@@ -164,11 +168,9 @@ export async function PUT(req: Request) {
 }
 
 // DELETE - Cancel order
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const { searchParams } = new URL(req.url);
     const orderId = searchParams.get("orderId");
@@ -201,6 +203,38 @@ export async function DELETE(req: Request) {
     console.error("Error cancelling order:", error);
     return NextResponse.json(
       { error: "Failed to cancel order" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Clear all orders (for testing/reset purposes)
+export async function PATCH(req: NextRequest) {
+  try {
+    await dbConnect();
+
+    const { searchParams } = new URL(req.url);
+    const clearAll = searchParams.get("clearAll");
+
+    if (clearAll !== "true") {
+      return NextResponse.json(
+        { error: "Invalid request. Use ?clearAll=true parameter" },
+        { status: 400 }
+      );
+    }
+
+    const result = await Order.deleteMany({});
+
+    console.log(`Deleted ${result.deletedCount} orders from database`);
+
+    return NextResponse.json({
+      message: `Successfully deleted ${result.deletedCount} orders`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error clearing orders:", error);
+    return NextResponse.json(
+      { error: "Failed to clear orders" },
       { status: 500 }
     );
   }

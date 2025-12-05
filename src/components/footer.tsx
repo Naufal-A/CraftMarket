@@ -20,9 +20,9 @@ const Footer = () => {
             </h3>
             {/* Placeholder Lines */}
             <div className="space-y-2">
-              <div className="h-3 bg-gray-300 rounded w-20"></div>
-              <div className="h-3 bg-gray-300 rounded w-24"></div>
-              <div className="h-3 bg-gray-300 rounded w-20"></div>
+              <div className="h-3 bg-gray-400 rounded w-20"></div>
+              <div className="h-3 bg-gray-400 rounded w-24"></div>
+              <div className="h-3 bg-gray-400 rounded w-20"></div>
             </div>
           </div>
 
@@ -98,7 +98,7 @@ const Footer = () => {
           </div>
 
           {/* Copyright */}
-          <p className="text-gray-600 text-xs">
+          <p className="text-gray-800 text-xs">
             &copy; 2024 CraftMarket. All rights reserved.
           </p>
         </div>

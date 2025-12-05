@@ -15,25 +15,43 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
   const [activeSection, setActiveSection] = useState("home");
   const [user, setUser] = useState<{ name: string; role: string } | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [localCartCount, setLocalCartCount] = useState(cartCount);
+  const [isHydrated, setIsHydrated] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Load user data only on client side after hydration
+  useEffect(() => {
+    setIsHydrated(true);
+    const userData = localStorage.getItem("user");
+    setUser(userData ? JSON.parse(userData) : null);
+  }, []);
 
   const navLinks = [
     { href: "/home", label: "Home" },
     { href: "/home?section=about", label: "About" },
     { href: "/products", label: "Products" },
     { href: "/home?section=services", label: "Services" },
-    { href: "/home?section=custom", label: "Custom" },
     { href: "/home?section=contact", label: "Contact Us" },
   ];
 
-  // Load user from localStorage
+  // Listen for cart updates
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
+    const handleCartUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail) {
+        setLocalCartCount(customEvent.detail.length);
+      }
+    };
+
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    return () => window.removeEventListener("cartUpdated", handleCartUpdate);
   }, []);
+
+  // Update local cart count when prop changes
+  useEffect(() => {
+    setLocalCartCount(cartCount);
+  }, [cartCount]);
 
   // Determine active section based on pathname
   const currentActive = useMemo(() => {
@@ -51,7 +69,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
 
     // For Home page, detect scroll position
     const handleScroll = () => {
-      const sections = ["home", "about", "services", "custom", "contact"];
+      const sections = ["home", "about", "services", "contact"];
       
       // Check from bottom to top to get the most specific section
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -104,7 +122,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
   };
 
   return (
-    <header className="w-full bg-white shadow-md sticky top-0 z-50">
+    <header className="w-full bg-white sticky top-0 z-50 border-b border-gray-200">
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo - Left */}
         <Link href="/" className="flex items-center">
@@ -126,7 +144,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 className={`font-medium text-sm transition-colors ${
                   isActive(link.href)
                     ? "text-[#D4845C]"
-                    : "text-gray-700 hover:text-[#D4845C]"
+                    : "text-gray-900 hover:text-[#D4845C]"
                 }`}
                 onClick={(e) => {
                   // Jika dari halaman yang sama (Home), gunakan smooth scroll
@@ -157,7 +175,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
 
         {/* Right Side: User Info / Login Button */}
         <div className="hidden md:flex items-center gap-4">
-          {user ? (
+          {isHydrated && user ? (
             <>
               {/* Cart Icon */}
               <Link
@@ -165,9 +183,9 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 className="relative flex items-center justify-center p-2 hover:bg-gray-100 rounded-lg transition"
               >
                 <ShoppingCart size={20} className="text-[#D4845C]" />
-                {cartCount > 0 && (
+                {localCartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartCount}
+                    {localCartCount}
                   </span>
                 )}
               </Link>
@@ -178,7 +196,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
                 >
                   <UserIcon size={20} className="text-[#D4845C]" />
-                  <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                  <span className="text-sm font-medium text-gray-900">{user.name}</span>
                 </button>
 
                 {isUserMenuOpen && (
@@ -188,6 +206,30 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                       <p className="text-sm font-semibold text-gray-800">{user.name}</p>
                       <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                     </div>
+                    {user.role === "buyer" && (
+                      <Link
+                        href="/orders"
+                        className="block px-4 py-3 text-gray-900 hover:bg-gray-100 transition text-sm font-medium border-b border-gray-200"
+                      >
+                        📦 Pesanan Saya
+                      </Link>
+                    )}
+                    {user.role === "seller" && (
+                      <Link
+                        href="/seller/dasboard"
+                        className="block px-4 py-3 text-gray-900 hover:bg-gray-100 transition text-sm font-medium border-b border-gray-200"
+                      >
+                        📊 Dashboard Seller
+                      </Link>
+                    )}
+                    {user.role === "buyer" && (
+                      <Link
+                        href="/seller/register"
+                        className="block px-4 py-3 text-[#D4845C] hover:bg-orange-50 transition text-sm font-medium border-b border-gray-200"
+                      >
+                        ⭐ Jadi Seller
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 transition text-sm font-medium"
@@ -199,7 +241,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 )}
               </div>
             </>
-          ) : (
+          ) : isHydrated ? (
             <>
               {/* Cart Icon untuk non-login user */}
               <Link
@@ -207,9 +249,9 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 className="relative flex items-center justify-center p-2 hover:bg-gray-100 rounded-lg transition"
               >
                 <ShoppingCart size={20} className="text-[#D4845C]" />
-                {cartCount > 0 && (
+                {localCartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartCount}
+                    {localCartCount}
                   </span>
                 )}
               </Link>
@@ -221,7 +263,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 Login
               </Link>
             </>
-          )}
+          ) : null}
         </div>
 
         {/* Mobile Menu Button */}
@@ -255,7 +297,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
               <li key={link.href + link.label}>
                 <Link
                   href={link.href}
-                  className="text-gray-700 hover:text-[#D4845C] font-medium transition-colors block"
+                  className="text-gray-900 hover:text-[#D4845C] font-medium transition-colors block"
                   onClick={(e) => {
                     setIsMenuOpen(false);
                     // Jika dari halaman yang sama (Home), gunakan smooth scroll
@@ -282,19 +324,43 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
           </ul>
 
           {/* Mobile User Info / Login */}
-          {user ? (
+          {isHydrated && user ? (
             <div className="border-t border-gray-200 pt-4">
               <div className="px-4 py-3 bg-gray-50 rounded-lg mb-3">
                 <p className="text-xs text-gray-500">Logged in as:</p>
                 <p className="text-sm font-semibold text-gray-800">{user.name}</p>
                 <p className="text-xs text-gray-500 capitalize">{user.role}</p>
               </div>
+              {user.role === "buyer" && (
+                <Link
+                  href="/orders"
+                  className="block w-full px-4 py-3 mb-2 bg-blue-600 text-white rounded-lg font-medium transition text-sm text-center"
+                >
+                  📦 Pesanan Saya
+                </Link>
+              )}
+              {user.role === "seller" && (
+                <Link
+                  href="/seller/dasboard"
+                  className="block w-full px-4 py-3 mb-2 bg-[#D4845C] text-white rounded-lg font-medium transition text-sm text-center"
+                >
+                  📊 Dashboard Seller
+                </Link>
+              )}
+              {user.role === "buyer" && (
+                <Link
+                  href="/seller/register"
+                  className="block w-full px-4 py-3 mb-2 bg-[#F4A56B] text-white rounded-lg font-medium transition text-sm text-center"
+                >
+                  ⭐ Jadi Seller
+                </Link>
+              )}
               <Link
                 href="/cart"
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-3 bg-[#C4B5A5] text-white rounded-lg font-medium transition text-sm"
               >
                 <ShoppingCart size={18} />
-                Keranjang {cartCount > 0 && `(${cartCount})`}
+                Keranjang {localCartCount > 0 && `(${localCartCount})`}
               </Link>
               <button
                 onClick={handleLogout}
@@ -304,23 +370,23 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 Logout
               </button>
             </div>
-          ) : (
+          ) : isHydrated ? (
             <>
               <Link
                 href="/cart"
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-3 bg-[#C4B5A5] text-white rounded-lg font-medium transition text-sm"
               >
                 <ShoppingCart size={18} />
-                Keranjang {cartCount > 0 && `(${cartCount})`}
+                Keranjang {localCartCount > 0 && `(${localCartCount})`}
               </Link>
               <Link
                 href="/login"
-                className="block w-full px-4 py-3 rounded-lg bg-gray-300 text-gray-800 font-medium hover:bg-gray-400 transition text-center text-sm"
+                className="block w-full px-4 py-3 rounded-lg bg-gray-400 text-gray-800 font-medium hover:bg-gray-500 transition text-center text-sm"
               >
                 Login
               </Link>
             </>
-          )}
+          ) : null}
         </div>
       )}
     </header>

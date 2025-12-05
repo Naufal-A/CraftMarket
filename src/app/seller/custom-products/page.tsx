@@ -302,9 +302,9 @@ export default function CustomProductPage() {
                       type="text"
                       value={formData.name}
                       onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
+                        setFormData({ ...formData, description: e.target.value })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                      className="w-full px-4 py-2 border border-gray-400 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-800 text-gray-900"
                       required
                     />
                   </div>
@@ -322,7 +322,7 @@ export default function CustomProductPage() {
                         })
                       }
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                      className="w-full px-4 py-2 border border-gray-400 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-800 text-gray-900 bg-white"
                       required
                     />
                   </div>
@@ -603,7 +603,7 @@ export default function CustomProductPage() {
                 <label className="border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-[#8C735A] transition block">
                   <div className="flex flex-col items-center gap-2">
                     <Upload size={32} className="text-gray-400" />
-                    <span className="text-gray-600 font-medium">
+                    <span className="text-gray-800 font-medium">
                       Klik atau drag gambar model
                     </span>
                     <span className="text-sm text-gray-500">
@@ -674,7 +674,7 @@ export default function CustomProductPage() {
           {/* Products List */}
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-gray-600">Loading...</p>
+              <p className="text-gray-800">Loading...</p>
             </div>
           ) : products.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -695,7 +695,7 @@ export default function CustomProductPage() {
                         <h3 className="text-xl font-bold text-gray-800">
                           {product.name}
                         </h3>
-                        <p className="text-gray-600 mt-1">{product.description}</p>
+                        <p className="text-gray-800 mt-1">{product.description}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-[#8C735A]">

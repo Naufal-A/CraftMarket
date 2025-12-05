@@ -19,20 +19,48 @@ const BuyerHomePage = () => {
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
+    const loadCart = async () => {
       try {
-        const cart = JSON.parse(savedCart);
-        setCartCount(Array.isArray(cart) ? cart.length : 0);
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+          // Load from database
+          const response = await fetch(`/api/cart?buyerId=${userId}`);
+          if (response.ok) {
+            const cartData = await response.json();
+            setCartCount(cartData.items?.length || 0);
+          }
+        } else {
+          // Fallback to localStorage
+          const savedCart = localStorage.getItem("cart");
+          if (savedCart) {
+            try {
+              const cart = JSON.parse(savedCart);
+              setCartCount(Array.isArray(cart) ? cart.length : 0);
+            } catch (err) {
+              console.error("Error parsing cart:", err);
+            }
+          }
+        }
       } catch (err) {
-        console.error("Error parsing cart:", err);
+        console.error("Error loading cart:", err);
+        const savedCart = localStorage.getItem("cart");
+        if (savedCart) {
+          try {
+            const cart = JSON.parse(savedCart);
+            setCartCount(Array.isArray(cart) ? cart.length : 0);
+          } catch (e) {
+            console.error("Error parsing cart:", e);
+          }
+        }
       }
-    }
+    };
+
+    loadCart();
   }, []);
 
   useEffect(() => {
@@ -79,7 +107,7 @@ const BuyerHomePage = () => {
           CraftMarket
         </h1>
 
-        <p className="text-gray-600 text-center mb-12 max-w-2xl leading-relaxed">
+        <p className="text-gray-800 text-center mb-12 max-w-2xl leading-relaxed">
           Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
         </p>
 
@@ -96,7 +124,7 @@ const BuyerHomePage = () => {
             <h2 className="text-3xl font-semibold text-[#8C735A] mb-2">
               Selamat Datang, {user.name}!
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-800">
               Jelajahi koleksi produk kerajinan terbaik dari pengrajin lokal.
             </p>
           </div>
@@ -179,60 +207,6 @@ const BuyerHomePage = () => {
             </div>
 
             {/* Service 3 */}
-            <div className="bg-gray-50 p-8 rounded-xl text-center">
-              <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">✏️</span>
-              </div>
-              <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
-                Custom Design
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Desain custom kami akan ditampilkan di sini
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === CUSTOM SECTION === */}
-      <section id="custom" className="w-full py-20 px-6 scroll-mt-20">
-        <div className="max-w-6xl mx-auto">
-          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-            Custom
-          </span>
-          <h2 className="text-4xl md:text-5xl font-serif text-[#8C735A] mb-16 mt-2">
-            Custom Solutions
-          </h2>
-
-          {/* Custom Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Custom 1 */}
-            <div className="bg-gray-50 p-8 rounded-xl text-center">
-              <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">🛋️</span>
-              </div>
-              <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
-                Custom Furniture
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Layanan furnitur custom kami akan ditampilkan di sini
-              </p>
-            </div>
-
-            {/* Custom 2 */}
-            <div className="bg-gray-50 p-8 rounded-xl text-center">
-              <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">💬</span>
-              </div>
-              <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
-                Free Consultation
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Konsultasi gratis kami akan ditampilkan di sini
-              </p>
-            </div>
-
-            {/* Custom 3 */}
             <div className="bg-gray-50 p-8 rounded-xl text-center">
               <div className="w-12 h-12 bg-[#C4B5A5] rounded-lg flex items-center justify-center mx-auto mb-4">
                 <span className="text-white font-bold text-xl">✏️</span>

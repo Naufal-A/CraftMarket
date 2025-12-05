@@ -90,7 +90,7 @@ export default function RegisterPage() {
           ))}
         </div>
 
-        <p className="text-sm text-gray-500 mb-5 text-center">
+        <p className="text-sm text-gray-700 mb-5 text-center">
           atau daftar dengan email
         </p>
 
@@ -101,7 +101,7 @@ export default function RegisterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+            className="border border-gray-400 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-800 text-gray-900 bg-white"
           />
 
           <input
@@ -110,7 +110,7 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+            className="border border-gray-400 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-800 text-gray-900 bg-white"
           />
 
           <input
@@ -119,16 +119,16 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+            className="border border-gray-400 rounded-lg px-4 py-2.5 w-full mb-3 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-800 text-gray-900 bg-white"
           />
 
           <input
             type="password"
-            placeholder="Konfirmasi Password"
+            placeholder="Confirm Password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            className="border border-gray-300 rounded-lg px-4 py-2.5 w-full mb-4 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-600"
+            className="border border-gray-400 rounded-lg px-4 py-2.5 w-full mb-4 focus:border-[#B89C8A] focus:ring-[#B89C8A] focus:ring-1 outline-none transition placeholder-gray-800 text-gray-900 bg-white"
           />
 
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}

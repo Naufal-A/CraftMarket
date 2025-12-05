@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Edit2, LayoutDashboard, ShoppingCart, PackageSearch, Wallet, Settings } from "lucide-react";
+import { Plus, Trash2, Edit2, LayoutDashboard, ShoppingCart, PackageSearch, LogOut } from "lucide-react";
 
 interface Product {
   _id: string;
@@ -39,6 +39,13 @@ export default function ProductsPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/seller/login");
+  };
 
   // Fetch products
   useEffect(() => {
@@ -161,8 +168,6 @@ export default function ProductsPage() {
             { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
             { key: "orders", label: "Orders", icon: <ShoppingCart size={18} /> },
             { key: "products", label: "Products", icon: <PackageSearch size={18} /> },
-            { key: "wallet", label: "Wallet", icon: <Wallet size={18} /> },
-            { key: "settings", label: "Settings", icon: <Settings size={18} /> },
           ].map((item) => (
             <button
               key={item.key}
@@ -184,6 +189,17 @@ export default function ProductsPage() {
               {item.label}
             </button>
           ))}
+        </div>
+
+        {/* Logout Button */}
+        <div className="mt-auto">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition font-medium"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
         </div>
       </aside>
 
@@ -231,9 +247,9 @@ export default function ProductsPage() {
             <input
               type="text"
               placeholder="Search Orders, Curtomers"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-600"
+              className="flex-1 px-4 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-700"
             />
-            <select className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C2AFA3] text-gray-700">
+            <select className="px-4 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-[#C2AFA3] text-gray-900">
               <option>All Statuses</option>
             </select>
           </div>
@@ -388,7 +404,7 @@ export default function ProductsPage() {
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium transition"
+                    className="flex-1 bg-gray-400 hover:bg-gray-500 text-gray-800 px-6 py-3 rounded-lg font-medium transition"
                   >
                     Batal
                   </button>
@@ -447,12 +463,12 @@ export default function ProductsPage() {
                           <div className="font-medium text-gray-900">
                             {product.name}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-700">
                             {product.description.substring(0, 50)}...
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-gray-800">
                         {product.category}
                       </td>
                       <td className="px-6 py-4 font-medium text-gray-900">
@@ -471,7 +487,7 @@ export default function ProductsPage() {
                           {product.stock} item
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-gray-800">
                         ⭐ {product.rating} ({product.reviews} reviews)
                       </td>
                       <td className="px-6 py-4">
