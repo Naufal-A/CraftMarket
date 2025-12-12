@@ -22,6 +22,8 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);  // Track which product is being edited
 
   // Regular Product Form
   const [formData, setFormData] = useState({
@@ -47,21 +49,31 @@ export default function ProductsPage() {
     router.push("/seller/login");
   };
 
-  // Fetch products
+  // Fetch products function
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("/api/products");
+      const data = await res.json();
+      const productsList = Array.isArray(data) ? data : data.products || [];
+      setProducts(productsList);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setLoading(false);
+    }
+  };
+
+  // Fetch products on mount
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch("/api/products");
-        const data = await res.json();
-        const productsList = Array.isArray(data) ? data : data.products || [];
-        setProducts(productsList);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setLoading(false);
-      }
-    };
     fetchProducts();
+  }, []);
+
+  // Auto-refresh products every 5 seconds to get latest reviews
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchProducts();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleInputChange = (
@@ -110,7 +122,6 @@ export default function ProductsPage() {
         return;
       }
 
-      setProducts([...products, data.product]);
       setSuccess("Produk berhasil ditambahkan!");
       setFormData({
         name: "",
@@ -123,9 +134,83 @@ export default function ProductsPage() {
       setShowForm(false);
 
       setTimeout(() => setSuccess(""), 3000);
+      
+      // Refresh products list
+      fetchProducts();
     } catch (err) {
       console.error("Error:", err);
       setError("Terjadi kesalahan server!");
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setFormData({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      category: product.category,
+      stock: product.stock.toString(),
+      image: "",
+    });
+    setEditingId(product._id);
+    setShowForm(true);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!formData.name || !formData.description || !formData.price || !formData.stock) {
+      setError("Semua field wajib diisi!");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${editingId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          category: formData.category,
+          stock: parseInt(formData.stock),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Gagal update produk!");
+        return;
+      }
+
+      setSuccess("Produk berhasil diperbarui!");
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+        category: "Furniture",
+        stock: "",
+        image: "",
+      });
+      setShowForm(false);
+      setEditingId(null);
+
+      setTimeout(() => setSuccess(""), 3000);
+      
+      // Refresh products list
+      fetchProducts();
+    } catch (err) {
+      console.error("Error:", err);
+      setError("Terjadi kesalahan saat update produk!");
     }
   };
 
@@ -146,9 +231,11 @@ export default function ProductsPage() {
         return;
       }
 
-      setProducts(products.filter((p) => p._id !== productId));
       setSuccess("Produk berhasil dihapus!");
       setTimeout(() => setSuccess(""), 3000);
+      
+      // Refresh products list
+      fetchProducts();
     } catch (err) {
       console.error("Error:", err);
       setError("Terjadi kesalahan saat menghapus produk!");
@@ -175,6 +262,8 @@ export default function ProductsPage() {
                 setActive(item.key);
                 if (item.key === "dashboard") {
                   router.push("/seller/dasboard");
+                } else if (item.key === "orders") {
+                  router.push("/seller/orders");
                 } else if (item.key === "products") {
                   router.push("/seller/products");
                 }
@@ -215,30 +304,42 @@ export default function ProductsPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-3xl font-semibold text-[#4A3B32]">
-              {products.length}
-            </div>
-            <div className="text-sm text-red-500 font-medium">Total Product</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-3xl font-semibold text-[#4A3B32]">
-              {products.filter((p) => p.stock > 0).length}
-            </div>
-            <div className="text-sm text-green-500 font-medium">Active</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-3xl font-semibold text-[#4A3B32]">
-              {products.filter((p) => p.stock > 0 && p.stock < 5).length}
-            </div>
-            <div className="text-sm text-yellow-500 font-medium">Low Stock</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-3xl font-semibold text-[#4A3B32]">
-              {products.filter((p) => p.stock === 0).length}
-            </div>
-            <div className="text-sm text-red-500 font-medium">Out Of Stock</div>
-          </div>
+          {/* Calculate filtered products */}
+          {(() => {
+            const filtered = products.filter((product) =>
+              product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              product.category.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            return (
+              <>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="text-3xl font-semibold text-[#4A3B32]">
+                    {filtered.length}
+                  </div>
+                  <div className="text-sm text-red-500 font-medium">Total Product</div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="text-3xl font-semibold text-[#4A3B32]">
+                    {filtered.filter((p) => p.stock > 0).length}
+                  </div>
+                  <div className="text-sm text-green-500 font-medium">Active</div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="text-3xl font-semibold text-[#4A3B32]">
+                    {filtered.filter((p) => p.stock > 0 && p.stock < 5).length}
+                  </div>
+                  <div className="text-sm text-yellow-500 font-medium">Low Stock</div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="text-3xl font-semibold text-[#4A3B32]">
+                    {filtered.filter((p) => p.stock === 0).length}
+                  </div>
+                  <div className="text-sm text-red-500 font-medium">Out Of Stock</div>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Add Product Button */}
@@ -246,12 +347,11 @@ export default function ProductsPage() {
           <div className="flex gap-4 flex-1">
             <input
               type="text"
-              placeholder="Search Orders, Curtomers"
-              className="flex-1 px-4 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-700"
+              placeholder="Cari produk..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 px-4 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-[#C2AFA3] placeholder-gray-700 text-gray-900"
             />
-            <select className="px-4 py-3 border border-gray-400 rounded-lg focus:outline-none focus:border-[#C2AFA3] text-gray-900">
-              <option>All Statuses</option>
-            </select>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -278,11 +378,11 @@ export default function ProductsPage() {
         {showForm && (
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
             <h2 className="text-2xl font-semibold text-[#4A3B32] mb-6">
-              Tambah Produk Baru
+              {editingId ? "Edit Produk" : "Tambah Produk Baru"}
             </h2>
 
             {/* Regular Product Form */}
-            <form onSubmit={handleSubmitRegular} className="space-y-4">
+            <form onSubmit={editingId ? handleSubmitEdit : handleSubmitRegular} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -397,13 +497,25 @@ export default function ProductsPage() {
                 <div className="flex gap-4 pt-4">
                   <button
                     type="submit"
+                    onClick={editingId ? (e) => handleSubmitEdit(e) : (e) => handleSubmitRegular(e)}
                     className="flex-1 bg-[#B89C8A] hover:bg-[#A88B78] text-white px-6 py-3 rounded-lg font-medium transition"
                   >
-                    Tambah Produk
+                    {editingId ? "Update Produk" : "Tambah Produk"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowForm(false)}
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditingId(null);
+                      setFormData({
+                        name: "",
+                        description: "",
+                        price: "",
+                        category: "Furniture",
+                        stock: "",
+                        image: "",
+                      });
+                    }}
                     className="flex-1 bg-gray-400 hover:bg-gray-500 text-gray-800 px-6 py-3 rounded-lg font-medium transition"
                   >
                     Batal
@@ -453,7 +565,13 @@ export default function ProductsPage() {
                     </td>
                   </tr>
                 ) : (
-                  products.map((product) => (
+                  products
+                    .filter((product) =>
+                      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((product) => (
                     <tr
                       key={product._id}
                       className="border-b border-gray-200 hover:bg-gray-50 transition"
@@ -492,12 +610,17 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <button className="p-2 hover:bg-blue-100 rounded-lg transition">
+                          <button
+                            onClick={() => handleEdit(product)}
+                            className="p-2 hover:bg-blue-100 rounded-lg transition"
+                            title="Edit produk"
+                          >
                             <Edit2 size={18} className="text-blue-600" />
                           </button>
                           <button
                             onClick={() => handleDelete(product._id)}
                             className="p-2 hover:bg-red-100 rounded-lg transition"
+                            title="Hapus produk"
                           >
                             <Trash2 size={18} className="text-red-600" />
                           </button>

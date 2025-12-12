@@ -341,7 +341,7 @@ export default function CustomProductPage() {
                             basePrice: parseFloat(e.target.value),
                           })
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600 text-gray-900 bg-white"
                         required
                       />
                     </div>
@@ -359,7 +359,7 @@ export default function CustomProductPage() {
                             deliveryTime: e.target.value,
                           })
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600 text-gray-900 bg-white"
                         required
                       />
                     </div>
@@ -379,7 +379,7 @@ export default function CustomProductPage() {
                           warranty: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600 text-gray-900 bg-white"
                     />
                   </div>
                 </div>
@@ -407,7 +407,7 @@ export default function CustomProductPage() {
                           },
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600 text-gray-900 bg-white"
                     />
                   </div>
                   <div>
@@ -426,7 +426,7 @@ export default function CustomProductPage() {
                           },
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600 text-gray-900 bg-white"
                     />
                   </div>
                   <div>
@@ -445,7 +445,7 @@ export default function CustomProductPage() {
                           },
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] placeholder-gray-600 text-gray-900 bg-white"
                     />
                   </div>
                 </div>

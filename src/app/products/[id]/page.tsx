@@ -306,7 +306,12 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
           const data = await reviewRes.json();
           setReviews(data.reviews || []);
           setAverageRating(parseFloat(data.averageRating) || 0);
+        } else {
+          console.error("Failed to fetch reviews:", reviewRes.statusText);
         }
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setReviewMessage(""), 3000);
       } else {
         const error = await response.json();
         setReviewMessage(error.error || "Gagal mengirim review");
@@ -565,6 +570,19 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
 
             {/* Review Form & Reviews List */}
             <div className="md:col-span-2">
+              {/* Success/Error Message */}
+              {reviewMessage && (
+                <div
+                  className={`mb-4 p-3 rounded-lg text-sm ${
+                    reviewMessage.includes("✓")
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {reviewMessage}
+                </div>
+              )}
+
               {showReviewForm && deliveredOrders.length > 0 && (
                 <div className="bg-white rounded-xl p-6 shadow-lg mb-6">
                   <h3 className="text-lg font-semibold text-[#4A3B32] mb-4">
@@ -629,19 +647,6 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
                       {reviewData.comment.length}/500 karakter
                     </p>
                   </div>
-
-                  {/* Message */}
-                  {reviewMessage && (
-                    <div
-                      className={`mb-4 p-3 rounded-lg text-sm ${
-                        reviewMessage.includes("✓")
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {reviewMessage}
-                    </div>
-                  )}
 
                   {/* Submit Button */}
                   <button

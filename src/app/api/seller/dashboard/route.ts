@@ -1,25 +1,16 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import dbConnect from "@/lib/mongodb";
 import Order, { IOrderItem } from "@/models/Order";
 import Product from "@/models/Product";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/craftmarket";
-
 export async function GET(req: Request) {
   try {
-    console.log("[Dashboard API] Request started");
-    
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const { searchParams } = new URL(req.url);
     const sellerId = searchParams.get("sellerId");
 
-    console.log("[Dashboard API] Seller ID:", sellerId);
-
     if (!sellerId) {
-      console.error("[Dashboard API] No seller ID provided");
       return NextResponse.json(
         { error: "Seller ID is required" },
         { status: 400 }
@@ -38,11 +29,8 @@ export async function GET(req: Request) {
     const yesterdayEnd = new Date(yesterday);
     yesterdayEnd.setDate(yesterdayEnd.getDate() + 1);
 
-    console.log("[Dashboard API] Date range - today:", today, "tomorrow:", tomorrow);
-
     // Get all orders for this seller
     const allOrders = await Order.find({ sellerId }).sort({ createdAt: -1 });
-    console.log("[Dashboard API] Found total orders:", allOrders.length);
 
     // Get today's orders
     const todayOrders = allOrders.filter(
@@ -56,7 +44,7 @@ export async function GET(req: Request) {
         new Date(order.createdAt) >= yesterday && new Date(order.createdAt) < yesterdayEnd
     );
 
-    // Calculate today's metrics
+    // Calculate metrics
     const todaysOrderCount = todayOrders.length;
     const todaysRevenue = todayOrders.reduce((sum, order) => {
       const price = typeof order.totalPrice === "string" 
@@ -65,7 +53,6 @@ export async function GET(req: Request) {
       return sum + (isNaN(price) ? 0 : price);
     }, 0);
 
-    // Calculate yesterday's metrics
     const yesterdayOrderCount = yesterdayOrders.length;
     const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => {
       const price = typeof order.totalPrice === "string"
@@ -101,14 +88,6 @@ export async function GET(req: Request) {
 
     // Get seller's products count
     const productsCount = await Product.countDocuments({ sellerId });
-
-    console.log("[Dashboard API] Recent orders count:", recentOrders.length);
-    console.log("[Dashboard API] Returning stats:", {
-      todaysOrders: todaysOrderCount,
-      pendingShipments,
-      deliveredItems,
-      todaysRevenue: Math.round(todaysRevenue),
-    });
 
     return NextResponse.json({
       stats: {

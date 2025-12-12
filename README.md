@@ -1,53 +1,169 @@
-# CraftMarket
+# CraftMarket - E-Commerce Platform
+
+Platform e-commerce full-stack untuk menjual produk handmade, furniture, dan crafts dengan fitur review, cart, checkout, dan seller dashboard.
+
 ## 🛠 Tech Stack
 
-- 🛣️ [Next.js](https://nextjs.org) as frameworks
-- ⚛️ [React 19](https://react.dev/)
-- 🎨 [TailwindCSS](https://tailwindcss.com/) with custom theme
-- 🛣️ [LucideReact] (https://lucide.dev/)
-- 🎯 [TypeScript](https://www.w3schools.com/Js/) for type safety
+- **Frontend:** React 19 + Next.js 16 (App Router)
+- **Styling:** Tailwind CSS 4 + Custom Theme
+- **Backend:** Next.js API Routes
+- **Database:** MongoDB + Mongoose
+- **Auth:** JWT + bcryptjs
+- **Icons:** Lucide React
+- **Language:** TypeScript
 
-## 🚀 Getting Started
+## ✨ Fitur Utama
 
-### Prerequisites
-- Node.js 
-- npm or pnpm
+✅ User Authentication (Register/Login)  
+✅ Product Browsing & Search  
+✅ Shopping Cart & Checkout  
+✅ Payment Integration (Midtrans dummy)  
+✅ Order Management  
+✅ Product Reviews & Ratings  
+✅ Seller Dashboard  
+✅ Real-time Order Status Update  
+
+## 📦 Instalasi & Setup
+
+### **Requirement**
+- Node.js v18+ 
+- MongoDB (Cloud atau Local)
 - Git
-- VS Code (recommended)
 
-### First Time Setup
+### **Quick Start**
 
-1. **Clone Repository**
+```bash
+# 1. Clone repository
+git clone https://github.com/your-username/craftmarket.git
+cd craftmarket
 
-   ```powershell
-   git clone https://github.com/Naufal-A/CraftMarket.git
-   cd CraftMarket
-   ```
+# 2. Install dependencies
+npm install
 
-2. **Setup Node.js**
+# 3. Setup environment variables
+cp .env.example .env.local
+# Edit .env.local dengan MongoDB URI Anda
 
-   ```powershell
-   # Install and use correct Node.js version
-   nvm install lts/*
-   nvm use lts/*
-   ```
+# 4. Run development server
+npm run dev
+```
 
-3. **Install Dependencies**
+Akses di: **http://localhost:3000**
 
-   ```powershell
-   # Install project dependencies
-   npm install
+📚 Dokumentasi Lengkap
 
-   # Setup Git hooks
-   npm run prepare
-   ```
+Untuk setup lebih detail, MongoDB setup, deployment, troubleshooting → Baca [SETUP.md](SETUP.md)
 
-4. **VS Code Setup** 
-    Install recommended extensions:
-   - ESLint
-   - Prettier
-   - Tailwind CSS IntelliSense
-   - GitLens
+Untuk dokumentasi perubahan & perbaikan yang telah dilakukan → Baca [CHANGELOG.md](CHANGELOG.md)
+
+## 🏗 Project Structure
+
+```
+src/
+├── app/
+│   ├── api/              ← Backend API Routes
+│   ├── products/         ← Product pages
+│   ├── seller/           ← Seller Dashboard
+│   ├── checkout/         ← Checkout
+│   └── ...
+├── models/               ← MongoDB Schemas
+├── components/           ← Reusable Components
+├── lib/                  ← Utilities
+└── types/                ← TypeScript Types
+```
+
+## 🚀 Deployment
+
+**Recommended:** [Vercel](https://vercel.com)
+
+```bash
+# 1. Push ke GitHub
+git push origin main
+
+# 2. Deploy di Vercel
+# - Connect GitHub repository
+# - Set MONGODB_URI environment variable
+# - Deploy!
+```
+
+## 📝 Scripts
+
+```bash
+npm run dev      # Development server
+npm run build    # Production build
+npm start        # Run production build
+npm run lint     # Check code quality
+```
+
+## 🔐 Environment Variables
+
+| Variable | Wajib | Contoh |
+|----------|-------|--------|
+| `MONGODB_URI` | ✅ | `mongodb+srv://user:pass@cluster.mongodb.net/craftmarket` |
+| `NODE_ENV` | ❌ | `development` |
+| `NEXT_PUBLIC_API_URL` | ❌ | `http://localhost:3000` |
+
+Copy dari `.env.example` dan sesuaikan dengan environment Anda.
+
+## 👥 User Roles
+
+1. **Regular User (Pembeli)**
+   - Browse & search products
+   - Add to cart & checkout
+   - Submit reviews & ratings
+   - Track orders
+
+2. **Seller**
+   - Dashboard dengan stats
+   - Add/Edit/Delete products
+   - View orders
+   - Manage delivery status
+
+## 🔗 API Endpoints
+
+### **Authentication**
+- `POST /api/auth/register` - Register user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/logout` - Logout
+
+### **Products**
+- `GET /api/products` - Get all products
+- `GET /api/products/[id]` - Get product detail
+- `POST /api/products` - Create product (seller)
+
+### **Reviews**
+- `GET /api/reviews?productId=xyz` - Get reviews
+- `POST /api/reviews` - Submit review
+
+### **Orders**
+- `GET /api/orders` - Get user orders
+- `POST /api/orders` - Create order
+- `PATCH /api/orders/[id]` - Update order status
+
+## 🐛 Troubleshooting
+
+**Error: MONGODB_URI is not defined**
+→ Pastikan `.env.local` ada dan filled dengan MongoDB connection string
+
+**Port 3000 sudah digunakan**
+```bash
+npm run dev -- -p 3001
+```
+
+**Build error**
+```bash
+npm run lint -- --fix
+```
+
+## 📞 Support
+
+- Baca [SETUP.md](SETUP.md) untuk dokumentasi lengkap
+- Check MongoDB connection: https://www.mongodb.com/cloud/atlas
+- Next.js docs: https://nextjs.org/docs
+
+---
+
+**Made with ❤️ for e-commerce**
 
 ## 🚀 Deployment
 

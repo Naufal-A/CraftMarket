@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader,
+  LayoutDashboard,
+  ShoppingCart,
+  PackageSearch,
+  LogOut,
+} from "lucide-react";
 import Image from "next/image";
 
 interface OrderItem {
@@ -65,6 +72,7 @@ export default function SellerOrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [active, setActive] = useState("orders");
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
@@ -143,6 +151,12 @@ export default function SellerOrdersPage() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/seller/login");
+  };
+
   const filteredOrders =
     selectedStatus === "all"
       ? orders
@@ -164,8 +178,58 @@ export default function SellerOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4EFEA] p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="flex h-screen bg-[#F4EFEA]">
+      {/* Sidebar Navigation */}
+      <aside className="w-72 bg-[#DCC8B9] h-full p-8 flex flex-col shadow-md">
+        <div className="text-xl font-bold text-[#4A3B32] mb-8 tracking-wide">
+          Marketplace Dashboard
+        </div>
+
+        <div className="flex flex-col gap-3 text-[#4A3B32] font-medium">
+          {[
+            { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+            { key: "orders", label: "Orders", icon: <ShoppingCart size={18} /> },
+            { key: "products", label: "Products", icon: <PackageSearch size={18} /> },
+          ].map((item) => (
+            <button
+              key={item.key}
+              onClick={() => {
+                setActive(item.key);
+                if (item.key === "dashboard") {
+                  router.push("/seller/dasboard");
+                } else if (item.key === "products") {
+                  router.push("/seller/products");
+                } else if (item.key === "orders") {
+                  router.push("/seller/orders");
+                }
+              }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                active === item.key
+                  ? "bg-white shadow-sm text-[#3B2E27]"
+                  : "hover:bg-white/40"
+              }`}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Logout Button */}
+        <div className="mt-auto">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition font-medium"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto p-8">
+        <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
@@ -344,7 +408,8 @@ export default function SellerOrdersPage() {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

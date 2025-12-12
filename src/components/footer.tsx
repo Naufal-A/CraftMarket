@@ -18,37 +18,42 @@ const Footer = () => {
             <h3 className="font-serif text-xl font-bold text-[#A68E74]">
               CraftMarket
             </h3>
-            {/* Placeholder Lines */}
-            <div className="space-y-2">
-              <div className="h-3 bg-gray-400 rounded w-20"></div>
-              <div className="h-3 bg-gray-400 rounded w-24"></div>
-              <div className="h-3 bg-gray-400 rounded w-20"></div>
-            </div>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Platform marketplace furnitur berkualitas tinggi dari pengrajin terbaik Indonesia. Kami menghadirkan koleksi furniture yang indah, fungsional, dan tahan lama untuk rumah Anda.
+            </p>
           </div>
 
           {/* Products Section */}
           <div>
             <h4 className="font-semibold text-gray-800 mb-4 text-sm">
-              Products
+              Produk
             </h4>
-            {/* Placeholder Lines */}
-            <div className="space-y-2">
-              <div className="h-2 bg-gray-300 rounded w-full"></div>
-              <div className="h-2 bg-gray-300 rounded w-full"></div>
-              <div className="h-2 bg-gray-300 rounded w-3/4"></div>
+            <div className="space-y-2 text-sm">
+              <Link href="/" className="text-gray-600 hover:text-[#8C735A] transition block">
+                Furnitur Ruang Tamu
+              </Link>
+              <Link href="/" className="text-gray-600 hover:text-[#8C735A] transition block">
+                Furnitur Kamar Tidur
+              </Link>
+              <Link href="/" className="text-gray-600 hover:text-[#8C735A] transition block">
+                Furnitur Dapur
+              </Link>
+              <Link href="/" className="text-gray-600 hover:text-[#8C735A] transition block">
+                Dekorasi Rumah
+              </Link>
             </div>
           </div>
 
           {/* Services Section */}
           <div>
             <h4 className="font-semibold text-gray-800 mb-4 text-sm">
-              Services
+              Layanan
             </h4>
-            {/* Placeholder Lines */}
-            <div className="space-y-2">
-              <div className="h-2 bg-gray-300 rounded w-full"></div>
-              <div className="h-2 bg-gray-300 rounded w-full"></div>
-              <div className="h-2 bg-gray-300 rounded w-3/4"></div>
+            <div className="space-y-2 text-sm">
+              <p className="text-gray-600">Desain Kreatif</p>
+              <p className="text-gray-600">Konsultasi Gratis</p>
+              <p className="text-gray-600">Furnitur Custom</p>
+              <p className="text-gray-600">Pengiriman Ke Seluruh Indonesia</p>
             </div>
           </div>
 

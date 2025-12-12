@@ -5,10 +5,7 @@ import Order from "@/models/Order";
 // GET - Get orders (by buyer, seller, or all)
 export async function GET(req: NextRequest) {
   try {
-    console.log("[Orders API GET] Request started");
-    
     await dbConnect();
-    console.log("[Orders API GET] Database connected");
 
     const { searchParams } = new URL(req.url);
     const buyerId = searchParams.get("buyerId");
@@ -23,15 +20,7 @@ export async function GET(req: NextRequest) {
     if (orderId) query.orderId = orderId;
     if (status) query.status = status;
 
-    console.log("[Orders API GET] Query parameters:", { buyerId, sellerId, orderId, status });
-    console.log("[Orders API GET] MongoDB query:", query);
-
     const orders = await Order.find(query).sort({ createdAt: -1 });
-
-    console.log(`[Orders API GET] Found ${orders.length} orders`);
-    if (orders.length > 0) {
-      console.log("[Orders API GET] First order:", JSON.stringify(orders[0], null, 2));
-    }
 
     return NextResponse.json({
       message: "Orders retrieved successfully",
@@ -39,11 +28,11 @@ export async function GET(req: NextRequest) {
       orders,
     });
   } catch (error) {
-    console.error("[Orders API GET] Error fetching orders:", error);
+    console.error("Error fetching orders:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Error fetching orders";
     return NextResponse.json(
-      { message: errorMessage, error: String(error) },
+      { message: errorMessage },
       { status: 500 }
     );
   }

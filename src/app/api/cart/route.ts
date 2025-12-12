@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import dbConnect from "@/lib/mongodb";
 import Cart from "@/models/Cart";
-
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/craftmarket";
 
 // GET - Get user's cart
 export async function GET(req: Request) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const { searchParams } = new URL(req.url);
     const buyerId = searchParams.get("buyerId");
@@ -41,9 +37,7 @@ export async function GET(req: Request) {
 // POST - Add item to cart or update existing item
 export async function POST(req: Request) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const { buyerId, productId, productName, price, quantity, image, sellerId } = await req.json();
 
@@ -101,9 +95,7 @@ export async function POST(req: Request) {
 // PUT - Update cart item quantity
 export async function PUT(req: Request) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const { buyerId, productId, quantity } = await req.json();
 
@@ -157,16 +149,12 @@ export async function PUT(req: Request) {
 // DELETE - Remove item from cart
 export async function DELETE(req: Request) {
   try {
-    if (!mongoose.connections[0].readyState) {
-      await mongoose.connect(MONGODB_URI);
-    }
+    await dbConnect();
 
     const { searchParams } = new URL(req.url);
     const buyerId = searchParams.get("buyerId");
     const productId = searchParams.get("productId");
     const clearAll = searchParams.get("clearAll");
-
-    console.log(`DELETE request: buyerId=${buyerId}, productId=${productId}, clearAll=${clearAll}`);
 
     if (!buyerId) {
       return NextResponse.json(
@@ -184,32 +172,17 @@ export async function DELETE(req: Request) {
       );
     }
 
-    console.log(`Cart found with ${cart.items.length} items`);
-
     if (clearAll === "true") {
       // Clear all items from cart
-      console.log(`Clearing all items from cart for buyer ${buyerId}`);
       cart.items = [];
     } else if (productId) {
-      // Filter items - remove items where productId matches (both string comparison)
-      const initialLength = cart.items.length;
-      const itemsBeforeFilter = cart.items.map((item: Record<string, unknown>) => item.productId);
-      console.log(`Items before filter: ${JSON.stringify(itemsBeforeFilter)}`);
-      
+      // Remove specific product
       cart.items = cart.items.filter((item: Record<string, unknown>) => 
         String(item.productId) !== String(productId)
       );
-
-      console.log(`Items removed: ${initialLength - cart.items.length} out of ${initialLength}`);
-
-      // Check if item was actually removed
-      if (cart.items.length === initialLength) {
-        console.warn(`Product ${productId} not found in cart for buyer ${buyerId}`);
-      }
     }
 
     const savedCart = await cart.save();
-    console.log(`Cart saved with ${savedCart.items.length} items`);
 
     return NextResponse.json(
       { message: "Cart updated", cart: savedCart },
@@ -218,7 +191,7 @@ export async function DELETE(req: Request) {
   } catch (error) {
     console.error("Error updating cart:", error);
     return NextResponse.json(
-      { error: "Failed to update cart", details: String(error) },
+      { error: "Failed to update cart" },
       { status: 500 }
     );
   }

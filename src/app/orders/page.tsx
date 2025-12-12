@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface OrderItem {
@@ -41,11 +42,11 @@ interface Order {
 }
 
 const statusConfig = {
-  pending: { label: "Menunggu Pembayaran", color: "bg-yellow-100 text-yellow-800", icon: "⏳" },
-  processing: { label: "Diproses", color: "bg-blue-100 text-blue-800", icon: "⚙️" },
-  shipped: { label: "Dikirim", color: "bg-purple-100 text-purple-800", icon: "📦" },
-  delivered: { label: "Terima", color: "bg-green-100 text-green-800", icon: "✓" },
-  cancelled: { label: "Dibatalkan", color: "bg-red-100 text-red-800", icon: "✗" },
+  pending: { label: "Menunggu Pembayaran", color: "bg-amber-100 text-amber-900", icon: "⏳" },
+  processing: { label: "Diproses", color: "bg-orange-100 text-orange-900", icon: "⚙️" },
+  shipped: { label: "Dikirim", color: "bg-yellow-100 text-yellow-900", icon: "📦" },
+  delivered: { label: "Terima", color: "bg-green-100 text-green-900", icon: "✓" },
+  cancelled: { label: "Dibatalkan", color: "bg-red-100 text-red-900", icon: "✗" },
 };
 
 export default function OrdersPage() {
@@ -141,24 +142,33 @@ export default function OrdersPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+      <div className="min-h-screen bg-[#F4EFEA] py-8 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Pesanan Saya</h1>
-            <p className="text-gray-600">Lacak status dan riwayat pesanan Anda</p>
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={() => router.push("/home")}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#8C735A] text-white hover:bg-[#7A6248] transition"
+                title="Kembali ke Home"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            </div>
+            <h1 className="text-4xl font-serif text-[#8C735A] font-bold mb-2">Pesanan Saya</h1>
+            <p className="text-gray-700">Lacak status dan riwayat pesanan Anda</p>
           </div>
 
           {/* Status Filter */}
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">Filter Status</h2>
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6 border-t-4 border-[#8C735A]">
+            <h2 className="text-sm font-semibold text-[#8C735A] mb-3">Filter Status</h2>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedStatus("all")}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
                   selectedStatus === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                    ? "bg-[#8C735A] text-white"
+                    : "bg-[#E8DCC8] text-[#8C735A] hover:bg-[#D9CCBA]"
                 }`}
               >
                 Semua
@@ -169,8 +179,8 @@ export default function OrdersPage() {
                   onClick={() => setSelectedStatus(key)}
                   className={`px-4 py-2 rounded-lg font-medium transition ${
                     selectedStatus === key
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                      ? "bg-[#8C735A] text-white"
+                      : "bg-[#E8DCC8] text-[#8C735A] hover:bg-[#D9CCBA]"
                   }`}
                 >
                   {config.label}
@@ -181,7 +191,7 @@ export default function OrdersPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-800 px-4 py-3 rounded-lg mb-6">
               {error}
             </div>
           )}
@@ -190,15 +200,15 @@ export default function OrdersPage() {
           {orders.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-12 text-center">
               <div className="text-6xl mb-4">📭</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Tidak ada pesanan</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className="text-2xl font-bold text-[#8C735A] mb-2">Tidak ada pesanan</h2>
+              <p className="text-gray-700 mb-6">
                 {selectedStatus === "all"
                   ? "Anda belum membuat pesanan. Mulai belanja sekarang!"
                   : "Tidak ada pesanan dengan status ini."}
               </p>
               <Link
                 href="/products"
-                className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                className="inline-block bg-[#8C735A] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#7A6248] transition"
               >
                 Belanja Sekarang
               </Link>
@@ -213,11 +223,11 @@ export default function OrdersPage() {
                     className="bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden"
                   >
                     {/* Order Header */}
-                    <div className="p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <div className="p-4 sm:p-6 bg-[#F9F6F3] border-b-4 border-[#8C735A]">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                          <h3 className="font-bold text-gray-900 text-lg">{order.orderId}</h3>
-                          <p className="text-gray-600 text-sm mt-1">
+                          <h3 className="font-bold text-[#8C735A] text-lg">{order.orderId}</h3>
+                          <p className="text-gray-700 text-sm mt-1">
                             {new Date(order.createdAt).toLocaleDateString("id-ID", {
                               year: "numeric",
                               month: "long",
@@ -232,8 +242,8 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Order Items */}
-                    <div className="p-4 sm:p-6 border-b border-gray-200">
-                      <h4 className="font-semibold text-gray-900 mb-3">Item Pesanan</h4>
+                    <div className="p-4 sm:p-6 border-b border-[#E8DCC8]">
+                      <h4 className="font-semibold text-[#8C735A] mb-3">Item Pesanan</h4>
                       <div className="space-y-3">
                         {order.items.map((item, idx) => (
                           <div key={idx} className="flex gap-3 sm:gap-4">
@@ -250,7 +260,7 @@ export default function OrdersPage() {
                               <p className="font-medium text-gray-900 truncate">
                                 {item.productName}
                               </p>
-                              <p className="text-gray-600 text-sm">
+                              <p className="text-gray-700 text-sm">
                                 Qty: {item.quantity} × Rp {item.price.toLocaleString("id-ID")}
                               </p>
                               {item.customizationDetails && (
@@ -281,7 +291,7 @@ export default function OrdersPage() {
                           <span>Subtotal</span>
                           <span>Rp {order.totalPrice.toLocaleString("id-ID")}</span>
                         </div>
-                        <div className="flex justify-between font-semibold text-gray-900 text-lg pt-2 border-t border-gray-200">
+                        <div className="flex justify-between font-semibold text-[#8C735A] text-lg pt-2 border-t border-[#E8DCC8]">
                           <span>Total</span>
                           <span>Rp {order.totalPrice.toLocaleString("id-ID")}</span>
                         </div>
@@ -289,10 +299,10 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Shipping Address & Tracking */}
-                    <div className="p-4 sm:p-6 grid sm:grid-cols-2 gap-6">
+                    <div className="p-4 sm:p-6 grid sm:grid-cols-2 gap-6 border-b border-[#E8DCC8]">
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">Alamat Pengiriman</h4>
-                        <div className="text-gray-600 text-sm space-y-1">
+                        <h4 className="font-semibold text-[#8C735A] mb-2">Alamat Pengiriman</h4>
+                        <div className="text-gray-700 text-sm space-y-1">
                           <p>{order.shippingAddress.fullName}</p>
                           <p>{order.shippingAddress.address}</p>
                           <p>
@@ -303,12 +313,12 @@ export default function OrdersPage() {
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">Metode Pembayaran</h4>
-                        <p className="text-gray-600 text-sm mb-4 capitalize">{order.paymentMethod}</p>
+                        <h4 className="font-semibold text-[#8C735A] mb-2">Metode Pembayaran</h4>
+                        <p className="text-gray-700 text-sm mb-4 capitalize">{order.paymentMethod}</p>
                         {order.trackingNumber && (
                           <div>
-                            <h4 className="font-semibold text-gray-900 mb-2">Nomor Resi</h4>
-                            <p className="text-gray-600 text-sm font-mono bg-gray-100 p-2 rounded">
+                            <h4 className="font-semibold text-[#8C735A] mb-2">Nomor Resi</h4>
+                            <p className="text-gray-700 text-sm font-mono bg-[#F9F6F3] p-2 rounded border border-[#E8DCC8]">
                               {order.trackingNumber}
                             </p>
                           </div>
@@ -317,8 +327,8 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Order Timeline */}
-                    <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
-                      <h4 className="font-semibold text-gray-900 mb-6">Status Pesanan</h4>
+                    <div className="p-4 sm:p-6 bg-[#F9F6F3] border-t border-[#E8DCC8]">
+                      <h4 className="font-semibold text-[#8C735A] mb-6">Status Pesanan</h4>
                       {(() => {
                         const statuses = ["pending", "processing", "shipped", "delivered"];
                         const currentStatusIndex = statuses.indexOf(order.status);
@@ -328,7 +338,7 @@ export default function OrdersPage() {
                             {/* Background connector line */}
                             <div className="absolute top-5 left-5 right-5 h-1 bg-gray-300 -z-10" />
                             <div 
-                              className="absolute top-5 left-5 h-1 bg-green-500 -z-10 transition-all duration-500"
+                              className="absolute top-5 left-5 h-1 bg-[#8C735A] -z-10 transition-all duration-500"
                               style={{ width: `${Math.max(0, (currentStatusIndex + 1) * 25 - 5)}%` }}
                             />
 
@@ -342,9 +352,9 @@ export default function OrdersPage() {
                                   <div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white mb-3 transition-all shadow-md ${
                                       isCompleted
-                                        ? "bg-green-500"
+                                        ? "bg-[#8C735A]"
                                         : isActive
-                                        ? "bg-blue-500 animate-pulse shadow-lg"
+                                        ? "bg-[#A68E74] animate-pulse shadow-lg"
                                         : "bg-gray-300"
                                     }`}
                                   >
@@ -353,7 +363,7 @@ export default function OrdersPage() {
                                   
                                   {/* Step Label */}
                                   <p className={`text-xs text-center font-semibold whitespace-nowrap px-1 ${
-                                    isActive ? "text-blue-600" : isCompleted ? "text-green-600" : "text-gray-500"
+                                    isActive ? "text-[#8C735A]" : isCompleted ? "text-[#8C735A]" : "text-gray-500"
                                   }`}>
                                     {statusConfig[step as keyof typeof statusConfig].label}
                                   </p>

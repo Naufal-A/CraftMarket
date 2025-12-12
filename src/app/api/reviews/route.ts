@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Review from "@/models/Review";
 import Order from "@/models/Order";
+import Product from "@/models/Product";
 
 export async function GET(req: NextRequest) {
   try {
@@ -24,6 +25,12 @@ export async function GET(req: NextRequest) {
       reviews.length > 0
         ? (reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length).toFixed(1)
         : 0;
+
+    // Ensure Product is updated with latest rating and reviews count
+    await Product.findByIdAndUpdate(productId, {
+      rating: parseFloat(averageRating),
+      reviews: reviews.length,
+    });
 
     return NextResponse.json({
       reviews,
@@ -113,7 +120,21 @@ export async function POST(req: NextRequest) {
 
     await review.save();
 
-    console.log(`[Review POST] Review created: ${review._id}`);
+    // Update Product with new rating and review count
+    const allReviews = await Review.find({ productId });
+    const averageRating =
+      allReviews.length > 0
+        ? parseFloat(
+            (allReviews.reduce((sum: number, review: any) => sum + review.rating, 0) / allReviews.length).toFixed(1)
+          )
+        : 0;
+
+    await Product.findByIdAndUpdate(productId, {
+      rating: averageRating,
+      reviews: allReviews.length,
+    });
+
+    console.log(`[Review POST] Review created: ${review._id}, Product updated with rating: ${averageRating}, reviews: ${allReviews.length}`);
 
     return NextResponse.json(
       { message: "Review created successfully", review },

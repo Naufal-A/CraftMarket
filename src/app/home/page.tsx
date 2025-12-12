@@ -1,6 +1,7 @@
 "use client";
 
-import { Star, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
+import { Star } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useEffect, useState } from "react";
@@ -76,24 +77,24 @@ const BuyerHomePage = () => {
   }, [searchParams]);
   const testimonials = [
     {
-      name: "Nom e-Owner",
+      name: "Siti Nurhaliza",
       rating: 5,
-      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      text: "Furnitur dari CraftMarket benar-benar mengubah penampilan ruang tamu saya. Kualitasnya luar biasa dan desainnya sangat elegan. Saya sangat puas dengan pembelian saya!",
     },
     {
-      name: "Nom e-Owner",
+      name: "Budi Santoso",
       rating: 5,
-      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      text: "Sebagai pengusaha, saya membutuhkan furnitur kantor yang profesional. CraftMarket memberikan pilihan yang sempurna dengan harga yang kompetitif. Pelayanannya juga sangat responsif!",
     },
     {
-      name: "Nom e-Owner",
+      name: "Maya Wijaya",
       rating: 5,
-      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      text: "Saya memesan sofa custom dan hasilnya melampaui ekspektasi saya. Pengrajin benar-benar memahami visi saya dan mewujudkannya dengan sempurna. Terima kasih CraftMarket!",
     },
     {
-      name: "Nom e-Owner",
+      name: "Ahmad Rizki",
       rating: 5,
-      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      text: "Proses pemesanan sangat mudah dan pengiriman cepat. Meja makan yang saya beli ternyata lebih bagus dari foto. Pasti akan merekomendasikan ke teman dan keluarga saya!",
     },
   ];
 
@@ -108,12 +109,19 @@ const BuyerHomePage = () => {
         </h1>
 
         <p className="text-gray-800 text-center mb-12 max-w-2xl leading-relaxed">
-          Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+          Temukan koleksi furnitur berkualitas tinggi yang dirancang khusus oleh para pengrajin berbakat. Setiap produk dibuat dengan perhatian terhadap detail dan menggunakan material terbaik untuk kenyamanan Anda.
         </p>
 
-        {/* Hero Image Placeholder */}
-        <div className="w-full max-w-3xl aspect-video bg-[#EAECF0] rounded-3xl flex items-center justify-center border-2 border-dashed border-gray-300">
-          <ImageIcon className="w-24 h-24 text-gray-400" />
+        {/* Hero Image */}
+        <div className="w-full max-w-3xl aspect-video rounded-3xl overflow-hidden shadow-lg">
+          <Image
+            src="/images/rooftop-seating-wooden-stool.jpg"
+            alt="CraftMarket - Furnitur berkualitas tinggi"
+            width={1200}
+            height={675}
+            priority
+            className="w-full h-full object-cover"
+          />
         </div>
       </section>
 
@@ -146,11 +154,11 @@ const BuyerHomePage = () => {
             {/* Placeholder untuk deskripsi About */}
 
             <p className="text-gray-700 leading-relaxed mb-8">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+              CraftMarket adalah platform marketplace yang menghubungkan Anda dengan pengrajin furnitur terbaik di Indonesia. Kami percaya bahwa setiap rumah membutuhkan furnitur yang tidak hanya indah secara visual, tetapi juga fungsional dan tahan lama. Melalui CraftMarket, Anda dapat menemukan berbagai pilihan furnitur yang diproduksi dengan keahlian tinggi dan dedikasi terhadap kualitas.
             </p>
 
             <p className="text-gray-700 leading-relaxed mb-8">
-              Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.
+              Dari meja makan minimalis modern hingga sofa yang nyaman untuk bersantai, setiap produk dipilih dengan cermat untuk memastikan kepuasan Anda. Tim pengrajin kami bekerja tanpa henti untuk menciptakan furnitur yang mencerminkan gaya hidup Anda dan meningkatkan nilai estetika rumah Anda.
             </p>
 
             {/* Button */}
@@ -159,10 +167,16 @@ const BuyerHomePage = () => {
             </button>
           </div>
 
-          {/* Right Column: Image Placeholder */}
+          {/* Right Column: Image */}
           <div className="flex-1 w-full">
-            <div className="aspect-square bg-[#EAECF0] rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300">
-              <ImageIcon className="w-32 h-32 text-gray-400" />
+            <div className="aspect-square rounded-2xl overflow-hidden shadow-lg">
+              <Image
+                src="/images/about-us.jpg"
+                alt="CraftMarket - Tentang kami"
+                width={600}
+                height={600}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
@@ -175,7 +189,7 @@ const BuyerHomePage = () => {
             Services
           </span>
           <h2 className="text-4xl md:text-5xl font-serif text-[#8C735A] mb-16 mt-2">
-            Explore Our Services
+            Layanan Kami
           </h2>
 
           {/* Services Grid */}
@@ -186,10 +200,10 @@ const BuyerHomePage = () => {
                 <span className="text-white font-bold text-xl">🛋️</span>
               </div>
               <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
-                Custom Furniture
+                Furnitur Custom
               </h3>
               <p className="text-gray-600 text-sm">
-                Layanan furnitur custom kami akan ditampilkan di sini
+                Desain dan buat furnitur impian Anda sesuai dengan preferensi dan ruang yang Anda miliki. Tim desainer profesional kami siap membantu mewujudkan visi Anda.
               </p>
             </div>
 
@@ -199,10 +213,10 @@ const BuyerHomePage = () => {
                 <span className="text-white font-bold text-xl">💬</span>
               </div>
               <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
-                Free Consultation
+                Konsultasi Gratis
               </h3>
               <p className="text-gray-600 text-sm">
-                Konsultasi gratis kami akan ditampilkan di sini
+                Dapatkan saran gratis dari para ahli furniture untuk memilih produk yang paling sesuai dengan kebutuhan dan budget Anda.
               </p>
             </div>
 
@@ -212,10 +226,10 @@ const BuyerHomePage = () => {
                 <span className="text-white font-bold text-xl">✏️</span>
               </div>
               <h3 className="text-xl font-semibold text-[#8C735A] mb-3">
-                Custom Design
+                Desain Kreatif
               </h3>
               <p className="text-gray-600 text-sm">
-                Desain custom kami akan ditampilkan di sini
+                Kreativitas tanpa batas untuk menciptakan furnitur yang unik dan sesuai dengan kepribadian serta gaya dekorasi rumah Anda.
               </p>
             </div>
           </div>
@@ -265,7 +279,7 @@ const BuyerHomePage = () => {
                       <p className="font-semibold text-gray-800 text-sm">
                         {testimonial.name}
                       </p>
-                      <p className="text-xs text-gray-500">Owner</p>
+                      <p className="text-xs text-gray-500">Pelanggan</p>
                     </div>
                   </div>
                 </div>
@@ -286,8 +300,14 @@ const BuyerHomePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             {/* Left: Image */}
-            <div className="aspect-square bg-[#EAECF0] rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300">
-              <ImageIcon className="w-32 h-32 text-gray-400" />
+            <div className="aspect-square rounded-2xl overflow-hidden shadow-lg">
+              <Image
+                src="/images/creepy-unexplainable-phone-calls.jpeg"
+                alt="CraftMarket - Hubungi kami"
+                width={600}
+                height={600}
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Right: Form */}

@@ -113,12 +113,22 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
     return false;
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    setIsUserMenuOpen(false);
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear localStorage as fallback
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userId");
+      setUser(null);
+      setIsUserMenuOpen(false);
+      router.push("/login");
+    }
   };
 
   return (

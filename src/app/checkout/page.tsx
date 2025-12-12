@@ -565,7 +565,7 @@ function ShippingForm({
             value={address.phone}
             onChange={(e) => onChange("phone", e.target.value)}
             placeholder="Contoh: 08123456789"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition text-gray-900 bg-white"
           />
         </div>
 
@@ -578,7 +578,7 @@ function ShippingForm({
             onChange={(e) => onChange("address", e.target.value)}
             placeholder="Jalan, nomor rumah, blok, etc"
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition text-gray-900 bg-white"
           />
         </div>
 
@@ -590,7 +590,7 @@ function ShippingForm({
             <select
               value={address.province}
               onChange={(e) => onChange("province", e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition text-gray-900 bg-white"
             >
               <option value="">Pilih Provinsi</option>
               {PROVINCES.map((prov) => (
@@ -610,7 +610,7 @@ function ShippingForm({
               value={address.city}
               onChange={(e) => onChange("city", e.target.value)}
               placeholder="Masukkan nama kota"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition text-gray-900 bg-white"
             />
           </div>
         </div>
@@ -624,7 +624,7 @@ function ShippingForm({
             value={address.postalCode}
             onChange={(e) => onChange("postalCode", e.target.value)}
             placeholder="Contoh: 12345"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C735A] focus:border-transparent outline-none transition text-gray-900 bg-white"
           />
         </div>
 

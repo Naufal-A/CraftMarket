@@ -73,7 +73,7 @@ function CartPageContent() {
     }
 
     const product = cartItems.find((item) => item._id === productId);
-    if (product && newQuantity > product.stock) {
+    if (product && product.stock && newQuantity > product.stock) {
       return;
     }
 

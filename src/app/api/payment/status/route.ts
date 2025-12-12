@@ -83,8 +83,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Payment Status POST] Updating payment for orderId: ${id}, status: ${status}`);
-
     // Update payment status
     const payment = await Payment.findOneAndUpdate(
       { $or: [{ orderId: id }, { transactionId: id }] },
@@ -93,26 +91,21 @@ export async function POST(request: NextRequest) {
     );
 
     if (!payment) {
-      console.error(`[Payment Status POST] Payment not found for orderId: ${id}`);
       return NextResponse.json(
         { message: "Data pembayaran tidak ditemukan" },
         { status: 404 }
       );
     }
 
-    console.log(`[Payment Status POST] Payment updated: ${payment._id}`);
-
     // Update order status based on payment status
     const orderStatus =
       status === "settlement" ? "processing" : status === "pending" ? "pending" : "cancelled";
 
-    const updatedOrder = await Order.findOneAndUpdate(
+    await Order.findOneAndUpdate(
       { $or: [{ orderId: id }, { transactionId: id }] },
       { status: orderStatus },
       { new: true }
     );
-
-    console.log(`[Payment Status POST] Order updated: ${updatedOrder?._id}`);
 
     return NextResponse.json(
       {

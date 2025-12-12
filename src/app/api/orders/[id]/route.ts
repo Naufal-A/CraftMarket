@@ -79,8 +79,6 @@ export async function PUT(
       );
     }
 
-    console.log(`[Order PUT] Order updated successfully: ${order._id}`);
-
     return NextResponse.json(
       { message: "Order status updated successfully", order },
       { status: 200 }
@@ -117,8 +115,6 @@ export async function DELETE(
         { status: 404 }
       );
     }
-
-    console.log(`[Order DELETE] Order cancelled successfully: ${order._id}`);
 
     return NextResponse.json(
       { message: "Order cancelled successfully", order },
