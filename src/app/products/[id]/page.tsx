@@ -5,7 +5,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 
 interface Product {
@@ -64,6 +64,9 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
   const [deliveredOrders, setDeliveredOrders] = useState<Order[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewMessage, setReviewMessage] = useState("");
+  const addToCartLock = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastAddToCartTimeRef = useRef<number>(0);
 
   // Extract params
   useEffect(() => {
@@ -97,12 +100,11 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
     fetchProduct();
   }, [productId]);
 
-  // Load cart from database or localStorage
+  // Load cart from database or localStorage (once on mount)
   useEffect(() => {
     const loadCart = async () => {
       try {
         let currentUserId = localStorage.getItem("userId");
-        console.log("[Product Page] Initial userId from localStorage:", currentUserId);
         
         // Fallback: try to get userId from user object
         if (!currentUserId) {
@@ -111,7 +113,6 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
             try {
               const user = JSON.parse(userStr);
               currentUserId = user._id;
-              console.log("[Product Page] Got userId from user object:", currentUserId);
             } catch (e) {
               console.error("[Product Page] Error parsing user object:", e);
             }
@@ -119,15 +120,12 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
         }
         
         setUserId(currentUserId);
-        console.log("[Product Page] Final userId:", currentUserId);
 
         if (currentUserId) {
-          // Always load from database for logged-in users (fresh data)
-          console.log("[Product Page] Fetching cart from DB for userId:", currentUserId);
+          // Load from database for logged-in users
           const response = await fetch(`/api/cart?buyerId=${currentUserId}`);
           if (response.ok) {
             const cartData = await response.json();
-            console.log("[Product Page] Cart data from DB:", cartData.items?.length || 0, "items");
             // Map items to include _id field for consistency
             const mappedItems = (cartData.items || []).map((item: Record<string, unknown>) => ({
               ...item,
@@ -135,11 +133,8 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
               name: (item.name as string) || (item.productName as string),
             }));
             setCart(mappedItems as CartItem[]);
-            // Also update localStorage with fresh data from database
-            localStorage.setItem("cart", JSON.stringify(mappedItems));
           }
         } else {
-          console.log("[Product Page] No userId, using localStorage cart");
           // For non-logged-in users, use localStorage
           const savedCart = localStorage.getItem("cart");
           if (savedCart) {
@@ -156,28 +151,6 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
     };
     
     loadCart();
-    
-    // Listen for custom cart update events
-    const handleCartUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      if (customEvent.detail) {
-        setCart(customEvent.detail);
-      }
-    };
-    
-    // Listen for storage changes (when cart is updated in another tab/page)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "cart" && e.newValue) {
-        setCart(JSON.parse(e.newValue));
-      }
-    };
-    
-    window.addEventListener("cartUpdated", handleCartUpdate);
-    window.addEventListener("storage", handleStorageChange);
-    return () => {
-      window.removeEventListener("cartUpdated", handleCartUpdate);
-      window.removeEventListener("storage", handleStorageChange);
-    };
   }, []);
 
   // Fetch delivered orders for review eligibility
@@ -204,72 +177,9 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
     fetchDeliveredOrders();
   }, [userId, productId]);
 
-  const handleAddToCart = async (product: Product) => {
-    console.log("[handleAddToCart] Adding product:", product.name);
-    console.log("[handleAddToCart] Current userId:", userId);
-    console.log("[handleAddToCart] Product sellerId:", product.sellerId);
-    
-    const existingItem = cart.find((item) => item._id === product._id);
-
-    let updatedCart;
-    if (existingItem) {
-      // If item exists, just increment by 1 (ignore quantity selector)
-      updatedCart = cart.map((item) =>
-        item._id === product._id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-    } else {
-      // If new item, add with quantity 1 (ignore quantity selector)
-      updatedCart = [...cart, { ...product, quantity: 1 }];
-    }
-
-    setCart(updatedCart);
-    try {
-      localStorage.setItem("cart", JSON.stringify(updatedCart));
-      console.log("[handleAddToCart] Cart saved to localStorage");
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "QuotaExceededError") {
-        console.warn("Storage quota exceeded. Clearing old data...");
-        localStorage.clear();
-      }
-    }
-
-    // Dispatch custom event to sync other components
-    window.dispatchEvent(
-      new CustomEvent("cartUpdated", { detail: updatedCart })
-    );
-
-    // Save to database if user is logged in
-    if (userId) {
-      try {
-        console.log("[handleAddToCart] Saving to DB with userId:", userId);
-        const cartResponse = await fetch("/api/cart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            buyerId: userId,
-            productId: product._id,
-            productName: product.name,
-            price: product.price,
-            quantity: existingItem ? existingItem.quantity + 1 : 1,
-            image: product.images?.[0],
-            sellerId: product.sellerId,
-          }),
-        });
-        console.log("[handleAddToCart] DB save response:", cartResponse.status);
-        if (cartResponse.ok) {
-          console.log("[handleAddToCart] Successfully saved to DB");
-        }
-      } catch (err) {
-        console.error("Error saving to database:", err);
-      }
-    } else {
-      console.warn("[handleAddToCart] No userId - not saving to DB");
-    }
-
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 2000);
+  // Add to cart handler - DISABLED
+  const handleAddToCart = (product: Product) => {
+    // Function disabled
   };
 
   const handleSubmitReview = async (orderId: string) => {
@@ -483,11 +393,11 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-900 text-white hover:bg-black transition disabled:opacity-50 disabled:bg-gray-500 text-xl font-bold"
                   >
                     −
                   </button>
-                  <span className="text-lg font-semibold w-8 text-center">
+                  <span className="text-lg font-bold w-8 text-center text-gray-900">
                     {quantity}
                   </span>
                   <button
@@ -495,7 +405,7 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
                       setQuantity(Math.min(product.stock, quantity + 1))
                     }
                     disabled={quantity >= product.stock}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-900 text-white hover:bg-black transition disabled:opacity-50 disabled:bg-gray-500 text-xl font-bold"
                   >
                     +
                   </button>
@@ -504,17 +414,17 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
 
               {/* Action Buttons */}
               <div className="flex gap-4">
-                <button
-                  onClick={() => handleAddToCart(product)}
+                <button 
+                  onClick={handleAddToCart}
                   disabled={product.stock === 0}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-semibold text-white transition ${
                     product.stock === 0
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-[#8C735A] hover:bg-[#7A6248]"
+                      : "bg-[#D4845C] hover:bg-[#C4734B]"
                   }`}
                 >
                   <ShoppingCart size={20} />
-                  Tambah ke Keranjang
+                  {product.stock === 0 ? "Habis" : "Tambah ke Keranjang"}
                 </button>
                 <button className="flex items-center justify-center gap-2 py-3 px-6 border-2 border-[#8C735A] text-[#8C735A] rounded-lg font-semibold hover:bg-[#F4EFEA] transition">
                   <Heart size={20} />
@@ -596,7 +506,7 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
                     </label>
                     <select
                       id="orderSelect"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A]"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] bg-white text-gray-900"
                     >
                       {deliveredOrders.map((order) => (
                         <option key={order._id} value={order._id}>
@@ -640,7 +550,7 @@ function ProductDetailPageContent({ params }: { params: Promise<{ id: string }> 
                         })
                       }
                       placeholder="Bagikan pengalaman Anda dengan produk ini..."
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#8C735A] resize-none bg-white text-gray-900 placeholder-gray-600"
                       rows={4}
                     ></textarea>
                     <p className="text-xs text-gray-600 mt-1">

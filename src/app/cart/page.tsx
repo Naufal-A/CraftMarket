@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Trash2, Plus, Minus } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
@@ -21,6 +21,9 @@ function CartPageContent() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set());
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const pendingUpdatesRef = useRef<Set<string>>(new Set());
 
   // Load cart from database or localStorage
   useEffect(() => {
@@ -67,25 +70,42 @@ function CartPageContent() {
     loadCart();
   }, []);
 
-  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+    // Prevent double updates
+    if (pendingUpdates.has(itemId)) {
+      return;
+    }
+
     if (newQuantity < 0) {
       return;
     }
 
-    const product = cartItems.find((item) => item._id === productId);
-    if (product && product.stock && newQuantity > product.stock) {
+    const item = cartItems.find((item) => item._id === itemId);
+    
+    if (!item) {
+      console.error("Item not found in cart");
       return;
     }
 
-    // If quantity is 0, remove the item
+    // Validate stock limit
+    if (item.stock && newQuantity > item.stock) {
+      // Cap at stock limit, don't reject
+      newQuantity = item.stock;
+    }
+
+    // If quantity is 0 or negative, remove the item
     if (newQuantity === 0) {
-      handleRemoveItem(productId);
+      handleRemoveItem(itemId);
       return;
     }
+
+    // Mark as pending to prevent double updates
+    setPendingUpdates(prev => new Set(prev).add(itemId));
+    pendingUpdatesRef.current.add(itemId);
 
     // Update local state immediately
-    const updatedCart = cartItems.map((item) =>
-      item._id === productId ? { ...item, quantity: newQuantity } : item
+    const updatedCart = cartItems.map((cartItem) =>
+      cartItem._id === itemId ? { ...cartItem, quantity: newQuantity } : cartItem
     );
     setCartItems(updatedCart);
 
@@ -99,22 +119,41 @@ function CartPageContent() {
       }
     }
 
-    // Dispatch custom event to sync other components
-    window.dispatchEvent(
-      new CustomEvent("cartUpdated", { detail: updatedCart })
-    );
-
     // Save to database if user is logged in
     if (userId) {
-      fetch("/api/cart", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          buyerId: userId,
-          productId,
-          quantity: newQuantity,
-        }),
-      }).catch((err) => console.error("Error updating cart in database:", err));
+      try {
+        const response = await fetch("/api/cart", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            buyerId: userId,
+            productId: item.productId,
+            quantity: newQuantity,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to update cart in database:", response.statusText);
+        }
+      } catch (err) {
+        console.error("Error updating cart in database:", err);
+      } finally {
+        // Remove from pending after database operation completes
+        setPendingUpdates(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(itemId);
+          return newSet;
+        });
+        pendingUpdatesRef.current.delete(itemId);
+      }
+    } else {
+      // Remove from pending if no userId
+      setPendingUpdates(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
+      pendingUpdatesRef.current.delete(itemId);
     }
   };
 
@@ -137,11 +176,6 @@ function CartPageContent() {
         localStorage.clear();
       }
     }
-
-    // Dispatch custom event to sync other components
-    window.dispatchEvent(
-      new CustomEvent("cartUpdated", { detail: updatedCart })
-    );
 
     // Remove from database if user is logged in
     if (userId && itemToDelete) {
@@ -169,6 +203,42 @@ function CartPageContent() {
     }
   };
 
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    
+    // Wait for all pending updates using ref (real-time value)
+    let waitAttempts = 0;
+    const maxWaitAttempts = 100; // 10 seconds max wait (100 * 100ms)
+
+    while (pendingUpdatesRef.current.size > 0 && waitAttempts < maxWaitAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      waitAttempts++;
+    }
+
+    if (waitAttempts >= maxWaitAttempts) {
+      console.warn("Timeout waiting for updates, proceeding anyway");
+    }
+
+    // Add extra delay to ensure database is truly synced
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Verify data is saved by refetching from database
+    if (userId) {
+      try {
+        const response = await fetch(`/api/cart?buyerId=${userId}`);
+        if (response.ok) {
+          const cartData = await response.json();
+          console.log("Cart verified before checkout:", cartData);
+        }
+      } catch (err) {
+        console.error("Error verifying cart:", err);
+      }
+    }
+
+    // Navigate to checkout
+    window.location.href = "/checkout";
+  };
+
   const handleClearAllCart = async () => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus semua item dari keranjang?")) {
       return;
@@ -185,11 +255,6 @@ function CartPageContent() {
         localStorage.clear();
       }
     }
-
-    // Dispatch custom event to sync other components
-    window.dispatchEvent(
-      new CustomEvent("cartUpdated", { detail: [] })
-    );
 
     // Clear all from database if user is logged in
     if (userId) {
@@ -299,26 +364,20 @@ function CartPageContent() {
                               onClick={() =>
                                 handleUpdateQuantity(itemId, Math.max(0, item.quantity - 1))
                               }
-                              className="p-1 hover:bg-gray-200 rounded transition"
+                              disabled={pendingUpdates.has(itemId)}
+                              className="p-1 hover:bg-gray-200 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Minus size={18} className="text-gray-800" />
                             </button>
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleUpdateQuantity(itemId, parseInt(e.target.value) || 0)
-                              }
-                              min="0"
-                              max={item.stock || 999}
-                              className="w-12 text-center border border-gray-300 rounded py-1 text-gray-900"
-                            />
+                            <span className="w-12 text-center py-1 text-gray-900 font-semibold">
+                              {item.quantity}
+                            </span>
                             <button
                               onClick={() =>
                                 handleUpdateQuantity(itemId, item.quantity + 1)
                               }
-                              disabled={item.quantity >= (item.stock || 999)}
-                              className="p-1 hover:bg-gray-200 rounded transition disabled:opacity-50"
+                              disabled={item.quantity > (item.stock || 999) || pendingUpdates.has(itemId)}
+                              className="p-1 hover:bg-gray-200 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Plus size={18} className="text-gray-800" />
                             </button>
@@ -333,7 +392,8 @@ function CartPageContent() {
                           </p>
                           <button
                             onClick={() => handleRemoveItem(itemId)}
-                            className="text-red-600 hover:text-red-700 transition"
+                            disabled={pendingUpdates.has(itemId)}
+                            className="text-red-600 hover:text-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Trash2 size={20} />
                           </button>
@@ -374,12 +434,13 @@ function CartPageContent() {
                     </span>
                   </div>
 
-                  <Link
-                    href="/checkout"
-                    className="block w-full bg-[#8C735A] text-white py-3 rounded-lg font-bold hover:bg-[#7A6248] transition mb-3 text-center"
+                  <button
+                    onClick={handleCheckout}
+                    disabled={checkoutLoading || cartItems.length === 0}
+                    className="block w-full bg-[#8C735A] text-white py-3 rounded-lg font-bold hover:bg-[#7A6248] transition mb-3 text-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Lanjut ke Pembayaran
-                  </Link>
+                    {checkoutLoading ? "Memproses..." : "Lanjut ke Pembayaran"}
+                  </button>
 
                   <Link
                     href="/products"

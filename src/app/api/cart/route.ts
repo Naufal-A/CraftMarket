@@ -48,6 +48,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate quantity is positive
+    if (quantity < 0) {
+      return NextResponse.json(
+        { error: "Quantity cannot be negative" },
+        { status: 400 }
+      );
+    }
+
     let cart = await Cart.findOne({ buyerId });
 
     if (!cart) {
@@ -58,13 +66,13 @@ export async function POST(req: Request) {
     }
 
     // Check if product already exists in cart
-    const existingItem = cart.items.find(
+    const existingItemIndex = cart.items.findIndex(
       (item: Record<string, unknown>) => item.productId === productId
     );
 
-    if (existingItem) {
-      // Add to existing quantity (accumulate)
-      existingItem.quantity = (existingItem.quantity as number) + quantity;
+    if (existingItemIndex !== -1) {
+      // Update existing item quantity - REPLACE not ADD
+      cart.items[existingItemIndex].quantity = quantity;
     } else {
       // Add new item
       cart.items.push({

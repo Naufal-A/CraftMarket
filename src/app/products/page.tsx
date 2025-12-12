@@ -31,6 +31,7 @@ const ProductsPageContent = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showCartNotification, setShowCartNotification] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Fetch products from API
   useEffect(() => {
@@ -49,7 +50,7 @@ const ProductsPageContent = () => {
     fetchProducts();
   }, []);
 
-  // Load cart from database or localStorage (refresh every time component mounts)
+  // Load cart from database or localStorage (only on mount)
   useEffect(() => {
     const loadCart = async () => {
       try {
@@ -79,10 +80,6 @@ const ProductsPageContent = () => {
       }
     };
     loadCart();
-    
-    // Also set up interval to refresh cart every 5 seconds
-    const interval = setInterval(loadCart, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   // Save cart to localStorage with error handling
@@ -102,36 +99,71 @@ const ProductsPageContent = () => {
   }, [cart]);
 
   const handleAddToCart = async (product: Product) => {
-    if (product.stock === 0) return;
+    if (product.stock === 0 || isAddingToCart) return;
 
-    const existingItem = cart.find((item) => item._id === product._id);
-    let newQuantity = 1;
+    setIsAddingToCart(true);
 
-    if (existingItem) {
-      if (existingItem.quantity < product.stock) {
-        newQuantity = existingItem.quantity + 1;
+    try {
+      // Get fresh cart data from database/localStorage to avoid stale state
+      let freshCart: CartItem[] = [];
+      
+      if (userId) {
+        const response = await fetch(`/api/cart?buyerId=${userId}`);
+        if (response.ok) {
+          const cartData = await response.json();
+          freshCart = cartData.items || [];
+        }
       } else {
-        return;
+        const savedCart = localStorage.getItem("cart");
+        if (savedCart) {
+          freshCart = JSON.parse(savedCart);
+        }
       }
-    }
 
-    // Update local state
-    if (existingItem) {
-      setCart(
-        cart.map((item) =>
-          item._id === product._id
+      // Find existing item in fresh cart
+      const existingItem = freshCart.find((item) => item._id === product._id || item.productId === product._id);
+      let newQuantity = 1;
+
+      if (existingItem) {
+        // Check if already at max stock
+        if (existingItem.quantity >= product.stock) {
+          // Already at max stock, don't add
+          setShowCartNotification(false);
+          setIsAddingToCart(false);
+          return;
+        }
+        newQuantity = existingItem.quantity + 1;
+        // Also cap at stock limit
+        if (newQuantity > product.stock) {
+          newQuantity = product.stock;
+        }
+      }
+
+      // Update cart with fresh data
+      let updatedCart: CartItem[];
+      if (existingItem) {
+        updatedCart = freshCart.map((item) =>
+          (item._id === product._id || item.productId === product._id)
             ? { ...item, quantity: newQuantity }
             : item
-        )
-      );
-    } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
-    }
+        );
+      } else {
+        updatedCart = [...freshCart, { ...product, quantity: 1 }];
+      }
 
-    // Save to database if user is logged in
-    if (userId) {
+      // Apply update to state
+      setCart(updatedCart);
+
+      // Save to localStorage
       try {
-        await fetch("/api/cart", {
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
+      } catch (error) {
+        console.error("Error saving to localStorage:", error);
+      }
+
+      // Save to database if user is logged in
+      if (userId) {
+        fetch("/api/cart", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -142,14 +174,16 @@ const ProductsPageContent = () => {
             quantity: newQuantity,
             image: product.images?.[0],
           }),
+        }).catch((err) => {
+          console.error("Error saving to database:", err);
         });
-      } catch (err) {
-        console.error("Error saving to database:", err);
       }
-    }
 
-    setShowCartNotification(true);
-    setTimeout(() => setShowCartNotification(false), 2000);
+      setShowCartNotification(true);
+      setTimeout(() => setShowCartNotification(false), 2000);
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const filteredProducts =
@@ -299,15 +333,15 @@ const ProductsPageContent = () => {
                             e.preventDefault();
                             handleAddToCart(product);
                           }}
-                          disabled={product.stock === 0}
+                          disabled={product.stock === 0 || isAddingToCart}
                           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-medium transition ${
-                            product.stock === 0
+                            product.stock === 0 || isAddingToCart
                               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                               : "bg-[#8C735A] text-white hover:bg-[#7A6248]"
                           }`}
                         >
                           <ShoppingCart size={18} />
-                          Tambah
+                          {isAddingToCart ? "..." : "Tambah"}
                         </button>
                         <button
                           onClick={(e) => e.preventDefault()}
